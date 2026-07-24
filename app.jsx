@@ -1589,8 +1589,12 @@ function ClubMajorsPrototype() {
   }, [session]);
 
   /* Self-serve onboarding: a fresh signup (role "pending", no invite link) gets
-     a club created automatically and lands on Club Settings — no owner approval. */
+     a club created automatically and lands on Club Settings — no owner approval.
+     Failures retry on a backoff and surface the real error — a silent "refresh
+     the page" dead end once masked a missing RPC in production for days. */
   const selfServeRef = useRef(false);
+  const [selfServeTry, setSelfServeTry] = useState(0);
+  const [selfServeErr, setSelfServeErr] = useState("");
   useEffect(() => {
     if (DEMO || INVITE || !session || selfServeRef.current) return;
     if (!profile || profile.role !== "pending") return;
@@ -1599,14 +1603,17 @@ function ClubMajorsPrototype() {
     try { nm = localStorage.getItem("cm-signup-club") || ""; rb = localStorage.getItem("cm-ref") || ""; } catch (e) {}
     sb.rpc("self_serve_signup", { p_club_name: nm, p_referred_by: rb || null }).then(({ error }) => {
       if (!error) {
+        setSelfServeErr("");
         try { localStorage.removeItem("cm-signup-club"); } catch (e) {}
         loadApp();
         setView("settings");
       } else {
-        selfServeRef.current = false; /* let a refresh retry */
+        selfServeRef.current = false;
+        setSelfServeErr(String((error && error.message) || error));
+        if (selfServeTry < 5) setTimeout(() => setSelfServeTry((t) => t + 1), 2000 * (selfServeTry + 1));
       }
     });
-  }, [session, profile]);
+  }, [session, profile, selfServeTry]);
 
   /* Account tab: referral promo message (empty = program silent) */
   useEffect(() => {
@@ -3518,9 +3525,16 @@ function ClubMajorsPrototype() {
                     {dbClub ? " · " + dbClub.name : ""}
                   </p>
                   <button className="btn btn-ghost" onClick={() => signOut()}>Sign out</button>
-                  {role === "pending" && (
+                  {role === "pending" && !selfServeErr && (
                     <p className="set-sub" style={{ color: "var(--under)" }}>
-                      Setting up your club — this takes a few seconds. If this message doesn't clear, refresh the page and your admin tools will appear.
+                      Setting up your club — this takes a few seconds…
+                    </p>
+                  )}
+                  {role === "pending" && selfServeErr && (
+                    <p className="set-sub" style={{ color: "var(--under)" }}>
+                      {selfServeTry < 5
+                        ? "Hit a snag setting up your club (" + selfServeErr + ") — retrying automatically…"
+                        : "We couldn't finish setting up your club: " + selfServeErr + ". Please email support@clubmajorsgolf.com and we'll fix it right away."}
                     </p>
                   )}
                   <div style={{ marginTop: 18, borderTop: "1px dotted var(--paper-line)", paddingTop: 14 }}>
