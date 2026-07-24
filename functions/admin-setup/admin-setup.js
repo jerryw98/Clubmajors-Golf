@@ -98,10 +98,9 @@ exports.handler = async (event) => {
     return "column present";
   });
 
-  await step("set Open pool deadline to 1:35 AM ET Thu", async () => {
-    const r = await sql("UPDATE public.pools SET deadline = '2026-07-16T05:35:00+00:00' WHERE event_name ILIKE '%open%' RETURNING id, event_name, deadline;");
-    return JSON.parse(r);
-  });
+  /* REMOVED Jul 2026: a one-time "set Open pool deadline to 1:35 AM ET Thu"
+     step lived here. Its ILIKE '%open%' match also hit later events ("3M
+     Open"…) and silently reset their deadlines to July 16 on every rerun. */
 
   await step("create payments table + owner read policy", async () => {
     await sql(`
