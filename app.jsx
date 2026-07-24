@@ -972,6 +972,33 @@ const EVENT = {
   deadlineISO: "2026-07-16T05:35:00Z", /* true first-tee instant (UTC) — rendered in each club's local time */
 };
 
+/* ClubMajors mark (identity "5a", claude.ai/design): fairway-green rounded
+   tile, 2×2 grid — three cream cells + a clay pennant. Pure CSS, scales from
+   the 104px reference; below 24px the pennant collapses to a solid clay cell
+   (per the identity sheet, the four-square rhythm still reads). */
+function CMLogo({ size = 40 }) {
+  const cell = size * 0.288, gap = size * 0.048, r = size * 0.192;
+  const pole = Math.max(1, Math.round(cell * 0.167));
+  const cream = { width: cell, height: cell, background: "#FBFAF7" };
+  return (
+    <div aria-label="ClubMajors" style={{ width: size, height: size, borderRadius: r, background: "#1C5C3B", display: "grid", placeContent: "center", flex: "none" }}>
+      <div style={{ display: "grid", gridTemplateColumns: cell + "px " + cell + "px", gridTemplateRows: cell + "px " + cell + "px", gap }}>
+        <div style={cream} />
+        {size >= 24 ? (
+          <div style={{ position: "relative", width: cell, height: cell }}>
+            <div style={{ position: "absolute", left: 0, top: 0, width: pole, height: cell, background: "#FBFAF7" }} />
+            <div style={{ position: "absolute", left: pole, top: 0, width: cell - pole, height: cell * 0.633, background: "#C2410C", clipPath: "polygon(0 0, 100% 0, 0 100%)" }} />
+          </div>
+        ) : (
+          <div style={{ width: cell, height: cell, background: "#C2410C" }} />
+        )}
+        <div style={cream} />
+        <div style={cream} />
+      </div>
+    </div>
+  );
+}
+
 /* datetime-local inputs are timezone-naive: always feed them LOCAL wall-clock
    strings so a club in California and a club in New York both see the same
    real-world moment expressed in their own time. */
@@ -2015,7 +2042,7 @@ function ClubMajorsPrototype() {
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Cinzel:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap');
 
         .cm-root {
           --pine: #15382B;
@@ -3527,6 +3554,13 @@ function ClubMajorsPrototype() {
         {view === "signup" && !session && (
           <div className="settings-grid" style={{ maxWidth: 520, margin: "0 auto" }}>
             <section className="set-block">
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+                <CMLogo size={44} />
+                <div>
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 24, lineHeight: 1, letterSpacing: "-0.035em", color: "#16130F" }}>ClubMajors</div>
+                  <div className="mono" style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: "#6B6862", marginTop: 6 }}>Pools for private clubs</div>
+                </div>
+              </div>
               <h3 className="set-title">Set up your club</h3>
               {signupState === "sent" ? (
                 <p className="set-sub" style={{ color: "var(--pine)" }}>
@@ -3697,6 +3731,7 @@ function ClubMajorsPrototype() {
         )}
 
         <footer className="powered">
+          <span style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><CMLogo size={26} /></span>
           Powered by <b>ClubMajors</b> · Golf tournament pool software for private clubs
           <span style={{ display: "block", marginTop: 36, paddingTop: 14, borderTop: "1px dotted var(--paper-line)", fontSize: 11.5, lineHeight: 1.7, opacity: 0.75, width: "100%", textAlign: "left", textTransform: "none", letterSpacing: "0.02em", fontFamily: "'Source Serif 4', serif" }}>
             ClubMajors provides pool-management software for entertainment purposes only. We do not accept, hold, or
