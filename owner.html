@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClubMajors · Owner Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root { --pine: #15382B; --paper: #F7F2E4; --paper-line: #E2DCC8; --brass: #B08D2E; --brass-bright: #D8B45A; --muted: #6E6A5E; --under: #A33B2E; --card: #FFFFFF; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: #24211A; font-family: 'Source Serif 4', serif; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  header.top { background: var(--pine); color: var(--paper); padding: 16px 22px 0; border-bottom: 3px solid var(--brass); }
+  .brand { font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.3em; color: var(--brass-bright); font-size: 14px; }
+  .brand small { display: block; letter-spacing: 0.14em; color: var(--paper); opacity: 0.85; font-size: 10.5px; margin-top: 3px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; max-width: 1180px; margin: 0 auto; flex-wrap: wrap; gap: 8px; }
+  .whoami { font-size: 11.5px; font-family: 'IBM Plex Mono', monospace; opacity: 0.85; }
+  .whoami button { background: none; border: 1px solid rgba(255,255,255,0.35); color: var(--paper); font-family: inherit; font-size: 10.5px; padding: 4px 10px; margin-left: 10px; cursor: pointer; }
+  nav.tabs { display: flex; gap: 2px; max-width: 1180px; margin: 14px auto 0; flex-wrap: wrap; }
+  nav.tabs button { background: rgba(255,255,255,0.08); border: none; color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 16px; cursor: pointer; border-radius: 6px 6px 0 0; }
+  nav.tabs button.active { background: var(--paper); color: var(--pine); font-weight: 600; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 22px 80px; }
+  .grid { display: grid; gap: 16px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--paper-line); border-radius: 10px; padding: 16px 18px; }
+  .kpi-k { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .kpi-v { font-size: 26px; font-weight: 700; color: var(--pine); margin-top: 6px; }
+  .kpi-s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  h2.section { font-size: 17px; color: var(--pine); border-bottom: 2px solid var(--brass); display: inline-block; padding-bottom: 4px; margin: 26px 0 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: var(--card); border: 1px solid var(--paper-line); border-radius: 10px; overflow: hidden; }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--paper-line); background: #FCF9EF; }
+  td { padding: 9px 12px; border-bottom: 1px solid #EFEAD9; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .chip { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; }
+  .chip.annual { background: #E4EFE7; color: #1E6641; } .chip.season2026 { background: #FBF3DC; color: #8a6d1c; }
+  .chip.single { background: #EEF1F8; color: #3C5488; } .chip.none { background: #F1EFE8; color: var(--muted); }
+  .chip.active { background: #E4EFE7; color: #1E6641; } .chip.expired, .chip.pending-chip { background: #FAE9E5; color: var(--under); }
+  .btn { background: var(--pine); color: var(--paper); border: none; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 9px 16px; border-radius: 6px; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--pine); border: 1.5px solid var(--pine); }
+  .btn.small { padding: 5px 10px; font-size: 10px; }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .subrow { font-size: 12.5px; color: var(--muted); }
+  .note { font-size: 12.5px; color: var(--muted); }
+  .err { color: var(--under); font-weight: 600; }
+  .ok { color: #1E6641; font-weight: 600; }
+  .signin { max-width: 400px; margin: 60px auto; }
+  .signin input { width: 100%; padding: 11px 12px; margin-top: 8px; border: 1px solid var(--paper-line); border-radius: 8px; font-size: 14px; font-family: inherit; }
+  .clublist { display: grid; grid-template-columns: 240px 1fr; gap: 16px; }
+  .clublist .pick { background: var(--card); border: 1px solid var(--paper-line); border-radius: 10px; overflow: hidden; align-self: start; }
+  .clublist .pick button { display: block; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid #EFEAD9; padding: 10px 14px; font-family: inherit; font-size: 13.5px; cursor: pointer; }
+  .clublist .pick button.sel { background: var(--pine); color: var(--paper); }
+  canvas { max-height: 320px; }
+  .seg { display: inline-flex; border: 1.5px solid var(--pine); border-radius: 8px; overflow: hidden; }
+  .seg button { background: none; border: none; padding: 9px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; cursor: pointer; color: var(--pine); }
+  .seg button.on { background: var(--pine); color: var(--paper); }
+  pre.diag { background: #FCF9EF; border: 1px solid var(--paper-line); border-radius: 8px; padding: 12px; font-size: 11.5px; white-space: pre-wrap; word-break: break-word; max-height: 260px; overflow: auto; }
+  @media (max-width: 760px) { .clublist { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar">
+    <div class="brand">CLUBMAJORS<small>OWNER DASHBOARD · PRIVATE</small></div>
+    <div class="whoami" id="whoami"></div>
+  </div>
+  <nav class="tabs" id="tabs" style="display:none"></nav>
+</header>
+<main id="main"><div class="note" style="margin-top:40px">Loading…</div></main>
+<script>
+window.SUPABASE_URL = "@@SUPA_URL@@";
+window.SUPABASE_KEY = "@@SUPA_KEY@@";
+const OWNERS = ["jerryw20180314@gmail.com", "0wangxinquan0@gmail.com"];
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt$ = (cents) => "$" + (Number(cents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const fmtD = (d) => d ? new Date(d).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : "—";
+const PLAN_LABEL = { annual: "Annual subscription", season2026: "2026 Season Pass", single: "Single event", subscription_renewal: "Annual renewal" };
+
+let D = null, TAB = "overview", session = null, chart = null, selClub = null;
+
+/* ---------- pure helpers (unit-tested) ---------- */
+function planInfo(club) {
+  const plan = club.plan || (club.latest_payment && club.latest_payment.plan) || null;
+  if (!plan) return { label: "No paid plan yet", cls: "none", expiry: null, expired: false };
+  const label = PLAN_LABEL[plan] || plan;
+  if (plan === "annual" || plan === "season2026" || plan === "subscription_renewal") {
+    const exp = club.paid_until ? new Date(club.paid_until) : null;
+    return { label, cls: plan === "annual" || plan === "subscription_renewal" ? "annual" : "season2026", expiry: exp, expired: !!(exp && exp < new Date()) };
+  }
+  return { label, cls: "single", expiry: null, expired: false };
+}
+function clubPools(D, clubId) {
+  const live = (D.pools || []).filter((p) => p.club_id === clubId).map((p) => ({ event: p.event_name || "(unnamed)", entries: Number(p.entry_count || 0), when: p.created_at, kind: p.published ? "live" : "draft" }));
+  const past = (D.archives || []).filter((a) => a.club_id === clubId).map((a) => ({ event: a.event_name || "(archived)", entries: Number(a.entry_count || 0), when: a.finalized_at, kind: "final" }));
+  return past.concat(live).sort((a, b) => new Date(a.when || 0) - new Date(b.when || 0));
+}
+function giftcardsDue(D) {
+  const sent = {};
+  (D.giftcards || []).forEach((g) => { sent[[g.club_id, "setup", (g.recipient || "").toLowerCase()].join("|")] = g; });
+  const clubsById = {}; (D.clubs || []).forEach((c) => { clubsById[c.id] = c; });
+  const annualByClub = {};
+  (D.payments || []).forEach((pm) => {
+    if ((pm.plan === "annual" || pm.plan === "subscription_renewal") && pm.club_id && !annualByClub[pm.club_id]) annualByClub[pm.club_id] = pm;
+  });
+  return Object.entries(annualByClub).map(([clubId, pm]) => {
+    const club = clubsById[clubId] || {};
+    const rec = (pm.customer_email || (club.admins && club.admins[0] && club.admins[0].email) || "").toLowerCase();
+    const req = (D.signups || []).find((s) => s.club_name && club.name && s.club_name.trim().toLowerCase() === club.name.trim().toLowerCase() && s.referred_by);
+    return { club_id: clubId, club: club.name || "(unknown club)", kind: "setup", recipient: rec || "(no email on payment)",
+             why: "Annual signup " + fmtD(pm.created_at) + (req ? " · came via referral from " + req.referred_by : ""),
+             done: sent[[clubId, "setup", rec].join("|")] || null };
+  });
+}
+function overviewStats(D) {
+  const now = new Date();
+  const totalRev = (D.payments || []).reduce((s, p) => s + Number(p.amount_cents || 0), 0);
+  const activeSubs = (D.clubs || []).filter((c) => (c.plan === "annual" || c.plan === "season2026") && c.paid_until && new Date(c.paid_until) > now);
+  const annuals = activeSubs.filter((c) => c.plan === "annual").length;
+  const paying = new Set((D.payments || []).map((p) => p.club_id).filter(Boolean));
+  const entriesTotal = (D.pools || []).reduce((s, p) => s + Number(p.entry_count || 0), 0) + (D.archives || []).reduce((s, a) => s + Number(a.entry_count || 0), 0);
+  const byPlan = {};
+  (D.payments || []).forEach((p) => { const k = p.plan || "other"; byPlan[k] = (byPlan[k] || 0) + Number(p.amount_cents || 0); });
+  return { totalRev, clubs: (D.clubs || []).length, paying: paying.size, annuals, activeSubs: activeSubs.length, entriesTotal, byPlan, mrr: annuals * 33000 / 12, alerts: (D.alerts || []).length };
+}
+function refResolve(D, refBy) {
+  if (!refBy) return null;
+  const norm = String(refBy).trim().toLowerCase();
+  const bySlug = (D.clubs || []).find((c) => (c.slug || "").toLowerCase() === norm);
+  if (bySlug) return { label: bySlug.name, tracked: true };
+  const byName = (D.clubs || []).find((c) => (c.name || "").trim().toLowerCase() === norm);
+  if (byName) return { label: byName.name, tracked: true };
+  return { label: refBy, tracked: false };
+}
+function signupConversion(D, s) {
+  const club = (D.clubs || []).find((c) => (c.name || "").trim().toLowerCase() === (s.club_name || "").trim().toLowerCase());
+  if (!club) return { label: "not converted", cls: "none", revenue: 0 };
+  const pi = planInfo(club);
+  return { label: pi.label, cls: pi.cls, revenue: Number(club.revenue_cents || 0) };
+}
+/* ---------- rendering ---------- */
+const TABS = [["overview", "Overview"], ["clubs", "Clubs"], ["pools", "Pools & Entries"], ["health", "Data Health"], ["gifts", "Gift Cards"], ["payments", "Payments"]];
+function renderTabs() {
+  $("tabs").style.display = "flex";
+  $("tabs").innerHTML = TABS.map(([id, label]) => `<button class="${TAB === id ? "active" : ""}" onclick="go('${id}')">${label}</button>`).join("");
+}
+function go(t) { TAB = t; renderTabs(); render(); }
+function render() {
+  if (!D) return;
+  const m = $("main");
+  if (TAB === "overview") return renderOverview(m);
+  if (TAB === "clubs") return renderClubs(m);
+  if (TAB === "pools") return renderPools(m);
+  if (TAB === "health") return renderHealth(m);
+  if (TAB === "gifts") return renderGifts(m);
+  if (TAB === "payments") return renderPayments(m);
+}
+function renderOverview(m) {
+  const s = overviewStats(D);
+  m.innerHTML = `
+    <div class="grid kpis">
+      <div class="card"><div class="kpi-k">Total revenue</div><div class="kpi-v">${fmt$(s.totalRev)}</div><div class="kpi-s">${(D.payments || []).length} payments</div></div>
+      <div class="card"><div class="kpi-k">Clubs</div><div class="kpi-v">${s.clubs}</div><div class="kpi-s">${s.paying} have paid</div></div>
+      <div class="card"><div class="kpi-k">Active subscriptions</div><div class="kpi-v">${s.activeSubs}</div><div class="kpi-s">${s.annuals} annual · MRR ≈ ${fmt$(s.mrr)}</div></div>
+      <div class="card"><div class="kpi-k">Total entries</div><div class="kpi-v">${s.entriesTotal}</div><div class="kpi-s">across all pools ever</div></div>
+      <div class="card"><div class="kpi-k">Validation alerts</div><div class="kpi-v">${s.alerts}</div><div class="kpi-s">recent, see Data Health</div></div>
+    </div>
+    <h2 class="section">Revenue by plan</h2>
+    <div class="card">${Object.entries(s.byPlan).sort((a, b) => b[1] - a[1]).map(([k, v]) => {
+      const pct = s.totalRev ? Math.round(100 * v / s.totalRev) : 0;
+      return `<div style="margin:8px 0"><span class="mono" style="font-size:11px;text-transform:uppercase">${esc(PLAN_LABEL[k] || k)}</span>
+        <div style="background:#EFEAD9;border-radius:6px;height:18px;margin-top:3px"><div style="width:${pct}%;min-width:2%;background:var(--pine);height:18px;border-radius:6px"></div></div>
+        <span class="subrow">${fmt$(v)} · ${pct}%</span></div>`;
+    }).join("") || '<p class="note">No payments yet.</p>'}</div>
+    <h2 class="section">Signups &amp; referral tracking</h2>
+    <p class="note">"Referred by" fills two ways: automatically when a signup comes through a club's referral link (marked <span class="chip active">tracked link</span>), or hand-typed on the signup form. Conversion shows whether that signup became a paying club.</p>
+    ${(D.signups || []).length ? `<table><tr><th>Email</th><th>Club</th><th>Referred by</th><th>Converted</th></tr>${(D.signups || []).map((r) => {
+      const ref = refResolve(D, r.referred_by);
+      const conv = signupConversion(D, r);
+      return `<tr><td>${esc(r.email)}</td><td>${esc(r.club_name)}</td>
+        <td>${ref ? esc(ref.label) + (ref.tracked ? ' <span class="chip active">tracked link</span>' : ' <span class="chip none">typed</span>') : "—"}</td>
+        <td><span class="chip ${conv.cls}">${esc(conv.label)}</span>${conv.revenue ? " " + fmt$(conv.revenue) : ""}</td></tr>`;
+    }).join("")}</table>` : '<p class="note">None yet.</p>'}
+    <h2 class="section">Referral promotion</h2>
+    <div class="card">
+      <p class="note">Every pro already has a referral link on their Account tab, and referrals are tracked above either way. The message below is what pros see next to that link — <strong>leave it empty and the program stays silent</strong>. When you're ready to launch (e.g., "Refer a club that goes annual — you each get a $20 gift card"), type it here and save. Takes effect immediately, no deploy.</p>
+      <textarea id="promoTxt" placeholder="(empty — program silent)" style="width:100%;min-height:64px;border:1px solid var(--paper-line);border-radius:8px;padding:10px;font-family:inherit;font-size:13.5px"></textarea>
+      <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+        <button class="btn" onclick="savePromo()">Save promotion message</button>
+        <button class="btn ghost" onclick="clearPromo()">Turn promotion off</button>
+        <span class="note" id="promoMsg"></span>
+      </div>
+    </div>`;
+  loadPromo();
+}
+function renderClubs(m) {
+  m.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h2 class="section" style="margin:0">All clubs — current &amp; past customers</h2>
+      <button class="btn" onclick="exportClubs()">Download Excel</button>
+    </div>
+    <table style="margin-top:14px"><tr><th>Club</th><th>Status</th><th>Latest plan</th><th>Expires</th><th>Total revenue</th></tr>
+    ${(D.clubs || []).map((c) => {
+      const pi = planInfo(c);
+      const admins = (c.admins || []).map((a) => `<div class="subrow">${esc(a.email || "")} <span class="mono" style="font-size:9.5px">(${esc(a.role)})</span></div>`).join("");
+      const named = Array.isArray(c.named_pros) ? c.named_pros.map((p) => `<div class="subrow">${esc(((p.first || "") + " " + (p.last || "")).trim())} <span class="mono" style="font-size:9.5px">(pool manager)</span></div>`).join("") : "";
+      return `<tr><td><strong style="color:var(--pine)">${esc(c.name)}</strong><div class="subrow mono" style="font-size:10px">/${esc(c.slug)}</div>${admins}${named}</td>
+        <td><span class="chip ${c.status === "active" ? "active" : "expired"}">${esc(c.status || "—")}</span></td>
+        <td><span class="chip ${pi.cls}">${esc(pi.label)}</span></td>
+        <td>${pi.expiry ? fmtD(pi.expiry) + (pi.expired ? ' <span class="err">expired</span>' : "") : "—"}</td>
+        <td><strong>${fmt$(c.revenue_cents)}</strong></td></tr>`;
+    }).join("") || "<tr><td colspan=5 class='note'>No clubs yet.</td></tr>"}</table>`;
+}
+function exportClubs() {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((D.clubs || []).map((c) => {
+    const pi = planInfo(c);
+    return { Club: c.name, Slug: c.slug, Status: c.status, "Latest plan": pi.label, Expires: pi.expiry ? pi.expiry.toISOString().slice(0, 10) : "", "Total revenue ($)": Number(c.revenue_cents || 0) / 100, "Signed up": (c.created_at || "").slice(0, 10), Admins: (c.admins || []).map((a) => a.email).join("; "), "Pool managers": Array.isArray(c.named_pros) ? c.named_pros.map((p) => ((p.first || "") + " " + (p.last || "")).trim()).join("; ") : "" };
+  })), "Clubs");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((D.clubs || []).flatMap((c) => (c.admins || []).map((a) => ({ Club: c.name, "Admin email": a.email, Role: a.role, Joined: (a.joined || "").slice(0, 10) })))), "Club admins");
+  XLSX.writeFile(wb, "clubmajors-clubs-" + new Date().toISOString().slice(0, 10) + ".xlsx");
+}
+function renderPools(m) {
+  const clubs = (D.clubs || []);
+  if (!selClub && clubs[0]) selClub = clubs[0].id;
+  const rows = selClub ? clubPools(D, selClub) : [];
+  const sel = clubs.find((c) => c.id === selClub);
+  m.innerHTML = `
+    <h2 class="section">Tournaments &amp; entries by club</h2>
+    <div class="clublist">
+      <div class="pick">${clubs.map((c) => `<button class="${c.id === selClub ? "sel" : ""}" onclick="pickClub('${c.id}')">${esc(c.name)}<div class="subrow mono" style="font-size:9.5px;${c.id === selClub ? "color:rgba(255,255,255,0.7)" : ""}">${clubPools(D, c.id).length} pool(s)</div></button>`).join("") || '<div class="note" style="padding:12px">No clubs.</div>'}</div>
+      <div class="card">
+        <strong style="color:var(--pine)">${esc(sel ? sel.name : "")}</strong>
+        <canvas id="poolChart" style="margin-top:10px"></canvas>
+        <table style="margin-top:14px"><tr><th>Tournament</th><th>Entries</th><th>Status</th><th>Date</th></tr>
+        ${rows.map((r) => `<tr><td>${esc(r.event)}</td><td><strong>${r.entries}</strong></td><td><span class="chip ${r.kind === "final" ? "single" : r.kind === "live" ? "active" : "none"}">${r.kind}</span></td><td>${fmtD(r.when)}</td></tr>`).join("") || "<tr><td colspan=4 class='note'>No pools for this club yet.</td></tr>"}</table>
+      </div>
+    </div>`;
+  if (rows.length && window.Chart) {
+    if (chart) chart.destroy();
+    chart = new Chart($("poolChart"), { type: "bar", data: { labels: rows.map((r) => r.event), datasets: [{ label: "Entries", data: rows.map((r) => r.entries), backgroundColor: "#15382B", borderRadius: 6 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } } });
+  }
+}
+function pickClub(id) { selClub = id; render(); }
+async function renderHealth(m) {
+  m.innerHTML = `
+    <h2 class="section">Score data source</h2>
+    <div class="card"><div class="seg" id="seg"><button disabled>…</button></div><p class="note" id="segmsg" style="margin-bottom:0">The active provider serves every club. If it fails mid-round, the feed fails over automatically (active → SlashGolf → DataGolf → ESPN → cached scores).</p></div>
+    <h2 class="section">Live checks</h2>
+    <div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn ghost" onclick="probeFeed()">Probe live feed</button>
+      <button class="btn ghost" onclick="probeOdds()">Probe odds feed</button>
+      <button class="btn ghost" onclick="runValidation()">Run 5-feed validation now</button>
+    </div><pre class="diag" id="diag">Click a check — results appear here.</pre></div>
+    <h2 class="section">Validation alert history</h2>
+    <p class="note">The watchdog runs every 2 hours and compares every player's score across all live sources. Only a <strong>2+ stroke spread</strong> on the same player counts — 1-stroke gaps during play are vendor timing lag, not bad data (that lag is what filled this history before Jul 23; those were false alarms, since fixed). Real alerts email jerryw20180314@gmail.com; identical repeats are not re-sent.</p>
+    ${(D.alerts || []).length ? `<table><tr><th>When</th><th>Mismatches</th><th>Detail</th><th>Emailed</th></tr>${D.alerts.map((a) => `<tr><td>${fmtD(a.created_at)} ${new Date(a.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</td><td>${a.mismatch_count}</td><td class="subrow">${esc((a.detail || "").slice(0, 160))}</td><td>${a.emailed ? "✓" : "—"}</td></tr>`).join("")}</table>` : '<p class="note">No alerts logged — quiet is good.</p>'}`;
+  try {
+    const { data } = await sb.from("platform_config").select("*").eq("key", "score_provider");
+    const cur = data && data[0] && data[0].value ? String(data[0].value).replace(/"/g, "") : "slashgolf";
+    $("seg").innerHTML = ["datagolf", "slashgolf", "espn"].map((p) => `<button class="${cur === p ? "on" : ""}" onclick="switchSource('${p}')">${p === "espn" ? "ESPN (free)" : p === "datagolf" ? "DataGolf" : "SlashGolf"}</button>`).join("");
+  } catch (e) { $("segmsg").innerHTML = '<span class="err">Could not read platform_config: ' + esc(e.message || e) + "</span>"; }
+}
+async function switchSource(next) {
+  try {
+    const { error } = await sb.from("platform_config").upsert({ key: "score_provider", value: next, updated_at: new Date().toISOString() });
+    if (error) throw error;
+    $("segmsg").innerHTML = '<span class="ok">Switched to ' + esc(next) + ". Every club's feed picks this up within ~90 seconds.</span>";
+    renderHealth($("main"));
+  } catch (e) { $("segmsg").innerHTML = '<span class="err">Switch failed: ' + esc(e.message || e) + "</span>"; }
+}
+function diagShow(headline, points, raw) {
+  $("diag").innerHTML = '<div style="font-family:\'Source Serif 4\', serif;font-size:14px">' + headline + "</div>" +
+    (points && points.length ? '<ul style="margin:8px 0 0;padding-left:18px;font-family:\'Source Serif 4\', serif;font-size:13px">' + points.map((p) => "<li>" + p + "</li>").join("") + "</ul>" : "") +
+    (raw ? '<details style="margin-top:10px"><summary class="mono" style="font-size:10px;cursor:pointer">raw response</summary><pre style="white-space:pre-wrap;font-size:11px">' + esc(JSON.stringify(raw, null, 2)) + "</pre></details>" : "");
+}
+async function probeFeed() {
+  $("diag").textContent = "Fetching live feed…";
+  try {
+    const j = await (await fetch("/.netlify/functions/leaderboard?cb=" + Date.now())).json();
+    const n = (j.players || []).length;
+    const scored = (j.players || []).filter((p) => p.total !== null && p.total !== undefined).length;
+    const pts = [];
+    pts.push("Tournament: <strong>" + esc(j.tournName || "?") + " " + esc(j.year || "") + "</strong> — " + n + " players in the feed, " + scored + " with scores" + (scored === 0 ? " (normal before play starts)" : ""));
+    pts.push("Serving from: <strong>" + esc(j.provider || "?") + "</strong>" + (j.requested && j.requested !== (j.provider || "").toLowerCase() ? ' <span class="err">— you asked for ' + esc(j.requested) + " but it failed, so backup kicked in</span>" : " (the source you selected)"));
+    pts.push(typeof j.coursePar === "number" ? "Course par confirmed: <strong>" + j.coursePar + "</strong> — over/under scores are exact" : '<span class="err">Course par not yet confirmed — board shows raw strokes until it is (protects against wrong ± numbers)</span>');
+    pts.push(j.stale ? '<span class="err">Serving CACHED scores from ' + esc(j.lastUpdated || "?") + " — all live sources are down</span>" : "Scores are live, updated " + (j.lastUpdated ? new Date(j.lastUpdated).toLocaleTimeString() : "just now"));
+    if (j.failoverErrors) pts.push('<span class="err">Failover happened this poll: ' + esc(JSON.stringify(j.failoverErrors)).slice(0, 160) + "</span>");
+    const bad = j.stale || j.failoverErrors || typeof j.coursePar !== "number";
+    diagShow(bad ? '<span class="err">⚠ Live feed is running with warnings</span>' : '<span class="ok">✓ Live feed healthy</span>', pts, j);
+  } catch (e) { diagShow('<span class="err">✗ Live feed did not answer: ' + esc(e.message || e) + "</span>", [], null); }
+}
+async function probeOdds() {
+  $("diag").textContent = "Fetching odds…";
+  try {
+    const j = await (await fetch("/.netlify/functions/leaderboard?view=odds&cb=" + Date.now())).json();
+    const o = j.odds || [];
+    diagShow(o.length >= 30 ? '<span class="ok">✓ Odds feed healthy</span>' : '<span class="err">⚠ Odds feed thin — picksheet falls back to name-seeded tiers</span>',
+      ["<strong>" + o.length + "</strong> players have win odds (30+ needed for odds-based tiers)",
+       o[0] ? "Current favorite: <strong>" + esc(o[0].name || o[0].player || "?") + " " + esc(o[0].odds || "") + "</strong>" : "No priced players yet — normal between tournaments"], j);
+  } catch (e) { diagShow('<span class="err">✗ Odds feed did not answer: ' + esc(e.message || e) + "</span>", [], null); }
+}
+async function runValidation() {
+  $("diag").textContent = "Running the cross-check — comparing every player's score on every live source (can take ~10s)…";
+  try {
+    const j = await (await fetch("/.netlify/functions/validate-cron?key=cm-validate-88412&cb=" + Date.now())).json();
+    if (j.skipped) { diagShow('<span class="ok">✓ Nothing to cross-check right now</span>', [esc(j.skipped), "This is normal between tournaments or before Thursday tee-off."], j); return; }
+    const pts = ["Compared <strong>" + (j.compared || 0) + "</strong> players across: " + (j.feeds || []).map(esc).join(", ")];
+    if ((j.mismatches || 0) === 0) pts.push("All sources agree (1-stroke gaps during play are timing lag between vendors and are ignored on purpose).");
+    else {
+      pts.push('<span class="err"><strong>' + j.mismatches + "</strong> real disagreement(s) — a spread of 2+ strokes on the same player:</span>");
+      (j.sample || []).forEach((s) => pts.push('<span class="mono" style="font-size:11px">' + esc(s) + "</span>"));
+      pts.push(j.email && j.email.sent ? "Alert email sent to jerryw20180314@gmail.com." : '<span class="err">Email not sent — ' + esc((j.email && (j.email.relay || j.email.reason)) || "?") + "</span>");
+    }
+    diagShow((j.mismatches || 0) === 0 ? '<span class="ok">✓ All score sources agree</span>' : '<span class="err">⚠ Sources disagree — investigate</span>', pts, j);
+  } catch (e) { diagShow('<span class="err">✗ No response (the check can outrun its 10s limit) — the scheduled run every 2 hours will still log to the history below.</span>', [], null); }
+}
+function renderGifts(m) {
+  const due = giftcardsDue(D);
+  const pending = due.filter((d) => !d.done), sentRows = due.filter((d) => d.done);
+  m.innerHTML = `
+    <h2 class="section">Gift cards to send</h2>
+    <p class="note">One $20 e-gift card per club — sent personally to the pro who signed the club up for the annual plan. One card, one email, per club.</p>
+    ${pending.length ? `
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <button class="btn" onclick="batchMarkGifts()">Mark selected as sent</button>
+      <button class="btn ghost" onclick="copyGiftEmails()">Copy selected emails</button>
+      <label class="note"><input type="checkbox" checked onchange="document.querySelectorAll('.gift-cb').forEach((c) => { c.checked = this.checked; })"> select all</label>
+    </div>
+    <table><tr><th></th><th>Club</th><th>Send to</th><th>Why</th><th></th></tr>
+    ${pending.map((d) => `<tr><td><input type="checkbox" class="gift-cb" checked data-club="${d.club_id}" data-rec="${esc(d.recipient)}"></td><td><strong style="color:var(--pine)">${esc(d.club)}</strong></td><td class="mono" style="font-size:12px">${esc(d.recipient)}</td><td class="subrow">${esc(d.why)}</td><td><button class="btn small" onclick="markGift('${d.club_id}','setup','${esc(d.recipient)}')">Mark sent</button></td></tr>`).join("")}</table>
+    <pre class="diag" id="giftout" style="display:none;margin-top:10px"></pre>`
+    : '<p class="note ok">Nobody waiting — all caught up.</p>'}
+    <h2 class="section">Already sent</h2>
+    ${sentRows.length ? `<table><tr><th>Club</th><th>Sent to</th><th>Why</th><th></th></tr>${sentRows.map((d) => `<tr><td><strong style="color:var(--pine)">${esc(d.club)}</strong></td><td class="mono" style="font-size:12px">${esc(d.recipient)}</td><td class="subrow">${esc(d.why)}</td><td><span class="ok">sent ${fmtD(d.done.sent_at)}</span> <button class="btn ghost small" onclick="unmarkGift(${d.done.id})">undo</button></td></tr>`).join("")}</table>` : '<p class="note">None marked sent yet.</p>'}`;
+}
+function selectedGifts() { return Array.prototype.slice.call(document.querySelectorAll(".gift-cb")).filter((c) => c.checked).map((c) => ({ club: c.dataset.club, rec: c.dataset.rec })); }
+function copyGiftEmails() {
+  const emails = [...new Set(selectedGifts().map((g) => g.rec).filter((e) => e.includes("@")))].join("\n");
+  const out = document.getElementById("giftout"); out.style.display = "block";
+  out.textContent = emails ? "Copied to clipboard:\n\n" + emails : "(no valid emails selected)";
+  try { navigator.clipboard.writeText(emails); } catch (e) {}
+}
+async function batchMarkGifts() {
+  const sel = selectedGifts();
+  if (!sel.length) return;
+  for (const g of sel) { await sb.rpc("owner_mark_giftcard", { p_club_id: g.club, p_kind: "setup", p_recipient: g.rec, p_note: "batch" }); }
+  await reload();
+}
+async function markGift(clubId, kind, recipient) {
+  const { error } = await sb.rpc("owner_mark_giftcard", { p_club_id: clubId, p_kind: kind, p_recipient: recipient, p_note: "" });
+  if (error) alert("Could not mark: " + error.message); else { await reload(); }
+}
+async function unmarkGift(id) {
+  const { error } = await sb.rpc("owner_unmark_giftcard", { p_id: id });
+  if (error) alert("Could not undo: " + error.message); else { await reload(); }
+}
+function renderPayments(m) {
+  m.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h2 class="section" style="margin:0">All payments</h2>
+      <button class="btn" onclick="exportPayments()">Download Excel</button>
+    </div>
+    <table style="margin-top:14px"><tr><th>Date</th><th>Club</th><th>Paid by</th><th>Plan</th><th>Promo</th><th>Amount</th></tr>
+    ${(D.payments || []).map((p) => `<tr><td>${fmtD(p.created_at)}</td><td>${esc(p.club_name || "—")}</td><td>${esc(p.customer_email || "—")}</td><td><span class="chip ${p.plan === "annual" ? "annual" : p.plan === "season2026" ? "season2026" : "single"}">${esc(PLAN_LABEL[p.plan] || p.plan || "—")}</span></td><td class="mono" style="font-size:11px">${esc(p.promo_code || "—")}</td><td><strong>${fmt$(p.amount_cents)}</strong></td></tr>`).join("") || "<tr><td colspan=6 class='note'>No payments yet.</td></tr>"}</table>`;
+}
+function exportPayments() {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((D.payments || []).map((p) => ({ Date: (p.created_at || "").slice(0, 10), Club: p.club_name || "", "Paid by": p.customer_email || "", Plan: PLAN_LABEL[p.plan] || p.plan || "", Promo: p.promo_code || "", "Amount ($)": Number(p.amount_cents || 0) / 100 }))), "Payments");
+  XLSX.writeFile(wb, "clubmajors-payments-" + new Date().toISOString().slice(0, 10) + ".xlsx");
+}
+async function loadPromo() {
+  try {
+    const { data } = await sb.from("platform_config").select("value").eq("key", "referral_promo").maybeSingle();
+    const v = data && data.value ? String(data.value) : "";
+    if ($("promoTxt")) { $("promoTxt").value = v; $("promoMsg").textContent = v ? "Promotion is LIVE — pros can see this." : "Promotion is off."; }
+  } catch (e) {}
+}
+async function savePromo() {
+  const v = $("promoTxt").value.trim();
+  const { error } = await sb.from("platform_config").upsert({ key: "referral_promo", value: v, updated_at: new Date().toISOString() });
+  $("promoMsg").textContent = error ? "Save failed: " + error.message : v ? "Saved — pros now see this on their Account tab." : "Saved empty — promotion is off.";
+}
+async function clearPromo() { $("promoTxt").value = ""; await savePromo(); }
+/* ---------- auth + boot ---------- */
+function renderSignin(msg) {
+  $("tabs").style.display = "none";
+  $("main").innerHTML = `<div class="card signin"><div class="kpi-k">Owner sign in</div>
+    ${msg ? `<p class="err" style="font-size:13px">${esc(msg)}</p>` : ""}
+    <input id="em" type="email" placeholder="Owner email">
+    <input id="pw" type="password" placeholder="Password">
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" onclick="signIn()">Sign in</button>
+      <button class="btn ghost" onclick="magic()">Email me a link</button>
+    </div><p class="note" style="margin-bottom:0">This page is restricted to ClubMajors owner accounts.</p></div>`;
+}
+async function signIn() {
+  const { error } = await sb.auth.signInWithPassword({ email: $("em").value.trim(), password: $("pw").value });
+  if (error) renderSignin(error.message);
+}
+async function magic() {
+  const { error } = await sb.auth.signInWithOtp({ email: $("em").value.trim(), options: { emailRedirectTo: window.location.origin + "/owner" } });
+  renderSignin(error ? error.message : "Check your inbox for the sign-in link.");
+}
+async function signOut() { await sb.auth.signOut(); window.location.reload(); }
+async function reload() {
+  const { data, error } = await sb.rpc("owner_dashboard");
+  if (error) { $("main").innerHTML = '<div class="card signin"><p class="err">' + esc(error.message || error) + "</p><p class='note'>If this says &quot;Owners only&quot;, this account is not on the owner allowlist.</p></div>"; return; }
+  D = data || {};
+  renderTabs(); render();
+}
+sb.auth.onAuthStateChange(async (evt, s) => {
+  session = s;
+  const email = s && s.user && (s.user.email || "").toLowerCase();
+  $("whoami").innerHTML = s ? esc(email) + '<button onclick="signOut()">Sign out</button>' : "";
+  if (!s) return renderSignin();
+  if (!OWNERS.includes(email)) {
+    $("tabs").style.display = "none";
+    $("main").innerHTML = '<div class="card signin"><p class="err">This page is restricted to the platform owners.</p><p class="note">Signed in as ' + esc(email) + ' — this account is not on the owner list.</p><p><button class="btn ghost" onclick="signOut()">Sign out</button></p></div>';
+    return;
+  }
+  await reload();
+});
+sb.auth.getSession().then(({ data }) => { if (!data.session) renderSignin(); });
+</script>
+</body>
+</html>

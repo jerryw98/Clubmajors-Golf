@@ -1,0 +1,10 @@
+# NEVER commit the HTML deploy tools — they embed live secrets (Netlify PAT,
+# Supabase mgmt token, Resend key, Stripe webhook secret). Public repo.
+clubmajors-deploy-*.html
+clubmajors-stripe-deploy.html
+
+node_modules/
+.env
+.env.*
+*.zip
+.DS_Store

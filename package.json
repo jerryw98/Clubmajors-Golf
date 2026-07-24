@@ -1,0 +1,14 @@
+{
+  "name": "clubmajors",
+  "private": true,
+  "description": "ClubMajors — white-label golf tournament pool software. No build step: app.jsx is compiled in the browser. This package exists only for the test harness.",
+  "scripts": {
+    "test": "node test/etinstant.test.js && node test/harness.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.7",
+    "@babel/preset-react": "^7.24.7",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
