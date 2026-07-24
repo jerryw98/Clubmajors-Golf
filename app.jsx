@@ -582,11 +582,10 @@ function OwnerDashboard({ liveSource }) {
           if (d.players && d.players.length) feeds.push({ name: "SlashGolf", players: d.players });
         }
       } catch (e) {}
-      /* 2 · ESPN public scoreboard, fetched directly */
-      try {
-        const players = await fetchEspnScores();
-        if (players.length) feeds.push({ name: "ESPN", players });
-      } catch (e) {}
+      /* 2 · ESPN benched Jul 2026 — its scoreboard kept disagreeing with the
+         paid feeds and flooded validation with false mismatches. The PGA Tour
+         feed below is the free cross-check now. (ESPN remains available as the
+         leaderboard's last-resort live fallback only.) */
       /* 3 · PGA Tour via the pga-validate Netlify function */
       try {
         const r = await fetch("/.netlify/functions/pga-validate");
@@ -1483,6 +1482,7 @@ function ClubMajorsPrototype() {
   const [showCode, setShowCode] = useState(null);      // code to display after submit
   const [locked, setLocked] = useState(false);         // past deadline?
   const [codeInput, setCodeInput] = useState("");      // manual edit-code entry
+  const [golferQuery, setGolferQuery] = useState("");  // picksheet name filter
   const [pastResults, setPastResults] = useState([]);  // archived final leaderboards (admin)
   const [expandedResult, setExpandedResult] = useState(null);
   const [signupClub, setSignupClub] = useState("");    // self-serve club signup
@@ -1696,23 +1696,25 @@ function ClubMajorsPrototype() {
   })();
   const teamMode = !!(poolEvent && poolEvent.match && poolEvent.match.teamEvent);
   const ACTIVE_TIERS = teamMode ? TEAM_TIERS : TIERS;
-  const isPlatformEvent = !poolEvent || (poolEvent.match && poolEvent.match.start === EVENT.deadlineISO.slice(0, 10));
-  const heroTitle = (poolEvent ? poolEvent.name : EVENT.name) + " Pool";
+  /* The EVENT constant is only correct for the one hardcoded tournament — a
+     club with no published pool must never inherit its branding. */
+  const isPlatformEvent = !!(poolEvent && poolEvent.match && poolEvent.match.start === EVENT.deadlineISO.slice(0, 10));
+  const heroTitle = (poolEvent ? poolEvent.name : (dbClub && dbClub.name) || "Members'") + " Pool";
   const heroEyebrow = DEMO
     ? "Major Championship \u00b7 April 9\u201312, 2026"
     : isPlatformEvent
     ? EVENT.eyebrow
-    : poolEvent.match
+    : poolEvent && poolEvent.match
     ? PRICING_LABEL[poolEvent.match.type] + " · " + poolEvent.match.dates
     : "Members' Pool";
   const heroVenue = isPlatformEvent
     ? EVENT.venue + " · " + EVENT.location + " · " + EVENT.dates
     : DEMO
     ? "Augusta National Golf Club \u00b7 Augusta, GA"
-    : poolEvent.match
+    : poolEvent && poolEvent.match
     ? poolEvent.match.name.split(" · ").slice(1).join(" · ")
     : "";
-  const boardTitle = (poolEvent ? poolEvent.name : EVENT.shortName) + " Pool";
+  const boardTitle = (poolEvent ? poolEvent.name : (dbClub && dbClub.name) || "Members'") + " Pool";
   /* custom rules from the pool, one bullet per line; legacy paragraph-style
      rules (pre-bullet era) fall back to the standard bullets */
   const customRules =
@@ -1824,6 +1826,11 @@ function ClubMajorsPrototype() {
   const selectedEvent = EVENTS.find((e) => e.id === setup.eventId) || EVENTS[0];
   const eventFee = PLATFORM_PRICING[selectedEvent.type];
   const payoutSum = setup.payouts.reduce((a, b) => a + (Number(b) || 0), 0);
+  /* Platform fee already covered? Single-event pools carry paid=true once the
+     Stripe webhook lands; annual/season passes cover every pool while active.
+     Editing a paid pool must never route the pro through checkout again. */
+  const passActive = !!(dbClub && (dbClub.plan === "annual" || dbClub.plan === "season2026") && dbClub.paid_until && new Date(dbClub.paid_until).getTime() > Date.now());
+  const feeCovered = passActive || !!(dbPool && dbPool.paid && dbPool.event_name === selectedEvent.name.split(" · ")[0]);
   const ORDINALS = ["1st", "2nd", "3rd", "4th", "5th", "6th"];
   const examplePurse = 40 * (Number(setup.entryFee) || 0);
   const exampleFee = setup.adminFeeOn
@@ -2372,7 +2379,7 @@ function ClubMajorsPrototype() {
             </div>
             <div className="facts">
               <div className="fact"><div className="fact-k">Entry</div><div className="fact-v">${Number(setup.entryFee) || 50}</div></div>
-              <div className="fact"><div className="fact-k">Deadline</div><div className="fact-v">{dbPool ? new Date(dbPool.deadline).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : EVENT.deadlineFallbackShort}</div></div>
+              <div className="fact"><div className="fact-k">Deadline</div><div className="fact-v">{dbPool ? new Date(dbPool.deadline).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : "TBD"}</div></div>
               <div className="fact"><div className="fact-k">Entries</div><div className="fact-v mono">{entries.length}</div></div>
               <div className="fact"><div className="fact-k">Purse</div><div className="fact-v mono">${entries.length * (Number(setup.entryFee) || 50)}</div></div>
             </div>
@@ -2397,9 +2404,14 @@ function ClubMajorsPrototype() {
               </div>
               <div className="payout">
                 <h3>Payouts</h3>
-                <div className="payout-row"><span>1st place</span><span className="mono">60%</span></div>
-                <div className="payout-row"><span>2nd place</span><span className="mono">30%</span></div>
-                <div className="payout-row"><span>3rd place</span><span className="mono">10%</span></div>
+                {(setup.payouts || []).map((pct, i) =>
+                  (Number(pct) || 0) > 0 ? (
+                    <div className="payout-row" key={i}>
+                      <span>{(["1st", "2nd", "3rd", "4th", "5th"][i] || i + 1 + "th") + " place"}</span>
+                      <span className="mono">{pct}%</span>
+                    </div>
+                  ) : null
+                )}
               </div>
             </div>
 
@@ -2408,15 +2420,10 @@ function ClubMajorsPrototype() {
               <button className="btn btn-ghost" onClick={() => setView("board")}>View live leaderboard</button>
             </div>
 
-            <p className="pro-note">
-              Entry fees are collected and paid out by the golf shop. This site tracks picks and standings only.
-              Questions? Ask at the golf shop.
-            </p>
-
             {(() => {
               const mgrs = pros.filter((p) => (((p && p.first) || "") + ((p && p.last) || "")).trim());
               return mgrs.length > 0 ? (
-                <div style={{ textAlign: "right", marginTop: 20 }}>
+                <div style={{ textAlign: "left", marginTop: 20 }}>
                   <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
                     Pool manager{mgrs.length > 1 ? "s" : ""}
                   </div>
@@ -2428,6 +2435,11 @@ function ClubMajorsPrototype() {
                 </div>
               ) : null;
             })()}
+
+            <p className="pro-note">
+              Entry fees are collected and paid out by the golf shop. This site tracks picks and standings only.
+              Questions? Ask at the golf shop.
+            </p>
           </>
         )}
 
@@ -2436,8 +2448,12 @@ function ClubMajorsPrototype() {
           <>
             <div className="sheet-head">
               <div className="sheet-title">{editCode ? "Edit Your Picks" : "Official Picksheet"}</div>
-              <div className="sheet-deadline mono">
-                {dbPool ? `Picks lock ${new Date(dbPool.deadline).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}` : `Picks lock ${EVENT.deadlineFallback}`}
+              <div className="sheet-deadline mono" style={locked ? { color: "var(--under)" } : undefined}>
+                {locked
+                  ? "Entry deadline has passed"
+                  : dbPool
+                  ? `Picks lock ${new Date(dbPool.deadline).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}`
+                  : "Picks lock before Round 1"}
               </div>
             </div>
             <p className="sheet-sub">
@@ -2472,14 +2488,39 @@ function ClubMajorsPrototype() {
               </p>
             )}
 
-            {ACTIVE_TIERS.map((tier) => (
+            {!locked && (
+              <p className="sheet-sub" style={{ marginTop: -6, marginBottom: 18 }}>
+                <input
+                  className="club-name-input"
+                  style={{ display: "inline-block", width: 240, padding: "6px 10px", verticalAlign: "middle" }}
+                  placeholder="Search golfers by name…"
+                  value={golferQuery}
+                  onChange={(e) => setGolferQuery(e.target.value)}
+                  aria-label="Search golfers by name"
+                />
+                {golferQuery.trim() && (
+                  <button className="btn btn-ghost btn-small" style={{ marginLeft: 8, verticalAlign: "middle" }} onClick={() => setGolferQuery("")}>
+                    Clear search
+                  </button>
+                )}
+                {golferQuery.trim() && !ACTIVE_TIERS.some((t) => t.players.some((p) => p.name.toLowerCase().includes(golferQuery.trim().toLowerCase()))) && (
+                  <span className="count" style={{ marginLeft: 10, color: "var(--under)" }}>No golfers match “{golferQuery.trim()}”</span>
+                )}
+              </p>
+            )}
+
+            {ACTIVE_TIERS.map((tier) => {
+              const gq = locked ? "" : golferQuery.trim().toLowerCase();
+              const shownPlayers = gq ? tier.players.filter((p) => p.name.toLowerCase().includes(gq)) : tier.players;
+              if (gq && shownPlayers.length === 0) return null;
+              return (
               <section className="tier-block" key={tier.label}>
                 <div className="tier-head">
                   <span className="tier-roman">{tier.side || tier.label}</span>
                   <span className="tier-note">{tier.side ? (tier.side === "USA" ? "Team USA" : "The Internationals") + " · pick " + tier.label.slice(-1) + " of 3 · choose one" : "Choose one · " + tier.players.length + " golfers"}</span>
                 </div>
                 <div className="tier-grid">
-                  {tier.players.map((p) => (
+                  {shownPlayers.map((p) => (
                     <button
                       key={p.id}
                       className={`pick-card ${picks[tier.label] === p.id ? "selected" : ""}`}
@@ -2496,7 +2537,8 @@ function ClubMajorsPrototype() {
                   ))}
                 </div>
               </section>
-            ))}
+              );
+            })}
 
             {teamMode && (
               <section className="tier-block">
@@ -2737,7 +2779,7 @@ function ClubMajorsPrototype() {
                 ? `Live scoring via SlashGolf${lastUpdated ? " · updated " + new Date(lastUpdated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : ""}`
                 : source === "demo"
                 ? "Demo — official final scores from the 2026 Masters Tournament"
-                : "Simulated feed — live scoring starts when The Open tees off"}
+                : `Simulated feed — live scoring starts when ${poolEvent ? poolEvent.name : "the tournament"} tees off`}
             </div>
           </div>
           </>
@@ -2771,7 +2813,7 @@ function ClubMajorsPrototype() {
                     ? `Charged $${ANNUAL_PRICE} — ClubMajors Annual Pass now active through Jul 2027.`
                     : setup.billing === "season"
                     ? `2026 Season Pass active through Dec 31, 2026 — every remaining PGA Tour event included.`
-                    : `Charged $${eventFee} — single event (${PRICING_LABEL[selectedEvent.type]}).`} Receipt sent to the golf shop email.
+                    : `Single event (${PRICING_LABEL[selectedEvent.type]}) — $${eventFee} platform fee.`} Receipt sent to the golf shop email.
                 </p>
                 <p className="set-sub">The member invite link and printable picksheet are ready to share.</p>
                 {saveMsg && <p className="set-sub" style={{ color: "var(--pine)" }}>{saveMsg}</p>}
@@ -3070,9 +3112,10 @@ function ClubMajorsPrototype() {
                       className="btn btn-primary"
                       disabled={payoutSum !== 100}
                       onClick={async () => {
+                        const evName = selectedEvent.name.split(" · ")[0];
+                        let poolAfter = dbPool;
                         if (dbPool) {
                           try {
-                            const evName = selectedEvent.name.split(" · ")[0];
                             const poolFields = {
                               entry_fee: Number(setup.entryFee) || 0,
                               deadline: new Date(setup.deadline).toISOString(),
@@ -3122,6 +3165,7 @@ function ClubMajorsPrototype() {
                                   .single();
                                 if (error) throw error;
                                 setDbPool(np);
+                                poolAfter = np;
                                 setEntries([]);
                                 setLocked(new Date(np.deadline).getTime() < Date.now());
                                 setSaveMsg("New pool created for " + evName + " — the previous pool and its entries are preserved.");
@@ -3135,10 +3179,23 @@ function ClubMajorsPrototype() {
                             }
                           } catch (e) { setSaveMsg("Save failed: " + (e.message || e)); }
                         }
-                        setView("checkout");
+                        /* already paid — this pool or an active pass? republish without checkout */
+                        const covered = passActive || !!(poolAfter && poolAfter.paid && poolAfter.event_name === evName);
+                        if (covered && poolAfter) {
+                          try {
+                            await savePool(poolAfter.id, { published: true });
+                            setDbPool((p) => (p ? { ...p, published: true } : p));
+                            setSetup((s) => ({ ...s, published: true }));
+                            setSaveMsg(passActive ? "Changes published — covered by your pass, no new charge." : "Changes published — this pool's platform fee is already paid.");
+                          } catch (e) { setSaveMsg("Publish failed: " + (e.message || e)); }
+                        } else {
+                          setView("checkout");
+                        }
                       }}
                     >
-                      Review &amp; publish · ${setup.billing === "annual" ? ANNUAL_PRICE : setup.billing === "season" ? SEASON_PRICE : eventFee}
+                      {feeCovered
+                        ? "Publish changes — no new charge"
+                        : <>Review &amp; publish · ${setup.billing === "annual" ? ANNUAL_PRICE : setup.billing === "season" ? SEASON_PRICE : eventFee}</>}
                     </button>
                   </div>
                   <p className="pro-note" style={{ marginTop: 16 }}>
@@ -3473,7 +3530,7 @@ function ClubMajorsPrototype() {
               <h3 className="set-title">Set up your club</h3>
               {signupState === "sent" ? (
                 <p className="set-sub" style={{ color: "var(--pine)" }}>
-                  Check <strong>{signupEmail}</strong> — we sent a sign-in link. Click it and your club will be ready, with a starter Open Championship pool you can customize.
+                  Check <strong>{signupEmail}</strong> — we sent a sign-in link. Click it and your club will be ready to publish its first pool.
                 </p>
               ) : (
                 <>

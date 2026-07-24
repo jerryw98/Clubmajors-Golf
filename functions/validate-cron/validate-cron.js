@@ -103,9 +103,9 @@ exports.handler = async (event) => {
   if (!SUPA_TOKEN) return respond(500, { error: "SUPA_MGMT_TOKEN not set" });
 
   try {
-    /* five independent eyes: the live feed (whatever provider is active),
+    /* independent eyes: the live feed (whatever provider is active),
        SlashGolf DIRECT, DataGolf DIRECT (both checked even when not active),
-       ESPN, and the PGA Tour's published leaderboard */
+       the PGA Tour's published leaderboard, and optionally ESPN (benched) */
     const feeds = (await Promise.all([
       getFeed("Live feed", SITE_URL + "/.netlify/functions/leaderboard", (d) => (d.stale ? null : d.players)),
       SLASH_KEY
@@ -121,7 +121,12 @@ exports.handler = async (event) => {
             return out.length ? out : null;
           })
         : null,
-      getFeed("ESPN", "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard", espnExtract),
+      /* ESPN benched Jul 2026 — frequent score mismatches vs the paid feeds were
+         drowning real alerts in noise. The PGA Tour feed below is the free
+         cross-check now. Re-enable ESPN with env VALIDATE_ESPN=1. */
+      process.env.VALIDATE_ESPN === "1"
+        ? getFeed("ESPN", "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard", espnExtract)
+        : null,
       getFeed("PGA Tour", SITE_URL + "/.netlify/functions/pga-validate", (d) => d.players),
     ])).filter(Boolean);
 
