@@ -102,6 +102,20 @@ exports.handler = async (event) => {
      step lived here. Its ILIKE '%open%' match also hit later events ("3M
      Open"…) and silently reset their deadlines to July 16 on every rerun. */
 
+  await step("pools insert policy: club admins can create their club's pools", async () => {
+    /* the app's first-publish flow inserts a pools row directly; the original
+       hand-made policies (predating this file) may only cover UPDATE */
+    await sql(`
+      DROP POLICY IF EXISTS pools_admin_insert ON public.pools;
+      CREATE POLICY pools_admin_insert ON public.pools FOR INSERT
+        WITH CHECK (EXISTS (
+          SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
+            AND (pr.role = 'owner' OR (pr.role = 'pro' AND pr.club_id = pools.club_id))
+        ));
+    `);
+    return "pools_admin_insert policy in place";
+  });
+
   await step("create payments table + owner read policy", async () => {
     await sql(`
       CREATE TABLE IF NOT EXISTS public.payments (
