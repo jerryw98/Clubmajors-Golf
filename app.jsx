@@ -119,6 +119,15 @@ async function fetchApp() {
       .eq("club_id", club.id).eq("published", true)
       .order("created_at", { ascending: false }).limit(1);
     pool = pRes.data && pRes.data[0];
+    /* the club's own admin also gets their unpublished draft (e.g. reload
+       mid-checkout) so republishing reuses it instead of inserting a twin;
+       tabs stay hidden because hasPublishedPool checks pool.published */
+    if (!pool && profile && (profile.role === "pro" || profile.role === "owner") && profile.club_id === club.id) {
+      const dRes = await sb.from("pools").select("*")
+        .eq("club_id", club.id)
+        .order("created_at", { ascending: false }).limit(1);
+      pool = dRes.data && dRes.data[0];
+    }
     if (pool) {
       const eRes = await sb.rpc("get_entries", { p_pool_id: pool.id });
       entries = (eRes.data || []).map(mapEntry);
@@ -1821,14 +1830,24 @@ function ClubMajorsPrototype() {
     published: false,
   });
 
-  /* Admins see the member-facing tabs only once their first pool is published */
-  const hasPublishedPool = !!dbPool || setup.published || pastResults.length > 0;
+  /* No published pool → the member-facing tabs don't exist yet, for ANYONE.
+     A draft row created on the way to checkout does not count — only a pool
+     that is actually paid-and-published (dbPool.published, or this session
+     just published one). */
+  const hasPublishedPool = !!(dbPool && dbPool.published) || setup.published || pastResults.length > 0;
   const isAdminRole = role === "pro" || role === "owner";
-  const NAV_TABS = isAdminRole && !hasPublishedPool ? TABS.filter((t) => !["home", "picks", "board"].includes(t.id)) : TABS;
+  const guestNoPool = !DEMO && !isAdminRole && !hasPublishedPool;
+  const NAV_TABS = !DEMO && !hasPublishedPool
+    ? TABS.filter((t) => (isAdminRole ? !["home", "picks", "board"].includes(t.id) : !["picks", "board"].includes(t.id)))
+    : TABS;
 
-  /* if an admin lands on a hidden member view (e.g. page reload on "home"), route them to Pool Setup */
+  /* if anyone lands on a hidden member view (e.g. page reload or deep link),
+     route them somewhere real: admins to Pool Setup, guests to Pool Home
+     (which shows the no-active-pool notice) */
   useEffect(() => {
-    if (isAdminRole && !hasPublishedPool && ["home", "picks", "board"].includes(view)) setView("setup");
+    if (DEMO || hasPublishedPool) return;
+    if (isAdminRole && ["home", "picks", "board"].includes(view)) setView("setup");
+    if (!isAdminRole && ["picks", "board"].includes(view)) setView("home");
   }, [role, hasPublishedPool, view]);
 
   /* rules follow the format until the pro edits them by hand */
@@ -2397,7 +2416,16 @@ function ClubMajorsPrototype() {
 
       <main className="shell">
         {/* ============ POOL HOME ============ */}
-        {view === "home" && (
+        {view === "home" && guestNoPool && (
+          <section className="set-block" style={{ maxWidth: 560, margin: "40px auto 0", textAlign: "center" }}>
+            <h3 className="set-title" style={{ borderColor: "var(--brass)" }}>No active pool right now</h3>
+            <p className="set-sub" style={{ marginTop: 10 }}>
+              {(dbClub && dbClub.name) || "This club"} hasn't published a pool yet. When the golf shop opens the
+              next one, the picksheet and live leaderboard will appear right here — check back soon.
+            </p>
+          </section>
+        )}
+        {view === "home" && !guestNoPool && (
           <>
             <div className="champ-banner">
               <div className="champ-eyebrow">{heroEyebrow}</div>
@@ -2471,7 +2499,7 @@ function ClubMajorsPrototype() {
         )}
 
         {/* ============ PICKSHEET ============ */}
-        {view === "picks" && (
+        {view === "picks" && !guestNoPool && (
           <>
             <div className="sheet-head">
               <div className="sheet-title">{editCode ? "Edit Your Picks" : "Official Picksheet"}</div>
@@ -2634,7 +2662,7 @@ function ClubMajorsPrototype() {
         )}
 
         {/* ============ LEADERBOARD ============ */}
-        {view === "board" && (
+        {view === "board" && !guestNoPool && (
           <>
           {showCode && (
             <div className="champ-banner" style={{ borderTopColor: "var(--brass)", marginBottom: 18, textAlign: "left", padding: "16px 18px" }}>
