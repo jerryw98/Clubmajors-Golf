@@ -220,6 +220,7 @@ function makeZip(name, data) {
       const bad = ran.filter((s) => !s.ok);
       if (bad.length) { failed++; console.log("   ✗ " + name + " — " + bad.map((s) => s.error).join("; ").slice(0, 160)); }
       else if (!ran.length) { failed++; console.log("   ✗ " + name + " — matched no step (renamed?)"); }
+      else if (name.includes("diagnostic")) console.log("   ✓ " + name + "\n" + JSON.stringify(ran[0].result, null, 1));
       else console.log("   ✓ " + name);
     } catch (e) { failed++; console.log("   ✗ " + name + " — " + String(e.message).slice(0, 120)); }
   }

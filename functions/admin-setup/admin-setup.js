@@ -102,9 +102,10 @@ exports.handler = async (event) => {
      step lived here. Its ILIKE '%open%' match also hit later events ("3M
      Open"…) and silently reset their deadlines to July 16 on every rerun. */
 
-  await step("pools insert policy: club admins can create their club's pools", async () => {
-    /* the app's first-publish flow inserts a pools row directly; the original
-       hand-made policies (predating this file) may only cover UPDATE */
+  await step("pools policies: club admins can create, see, and publish their club's pools", async () => {
+    /* the app inserts a draft on first publish, reloads it (unpublished), and
+       flips published=true at checkout; the original hand-made policies
+       (predating this file) provably missed at least part of that path */
     await sql(`
       DROP POLICY IF EXISTS pools_admin_insert ON public.pools;
       CREATE POLICY pools_admin_insert ON public.pools FOR INSERT
@@ -112,8 +113,29 @@ exports.handler = async (event) => {
           SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
             AND (pr.role = 'owner' OR (pr.role = 'pro' AND pr.club_id = pools.club_id))
         ));
+      DROP POLICY IF EXISTS pools_admin_select ON public.pools;
+      CREATE POLICY pools_admin_select ON public.pools FOR SELECT
+        USING (published = true OR EXISTS (
+          SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
+            AND (pr.role = 'owner' OR (pr.role = 'pro' AND pr.club_id = pools.club_id))
+        ));
+      DROP POLICY IF EXISTS pools_admin_update ON public.pools;
+      CREATE POLICY pools_admin_update ON public.pools FOR UPDATE
+        USING (EXISTS (
+          SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
+            AND (pr.role = 'owner' OR (pr.role = 'pro' AND pr.club_id = pools.club_id))
+        ))
+        WITH CHECK (EXISTS (
+          SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
+            AND (pr.role = 'owner' OR (pr.role = 'pro' AND pr.club_id = pools.club_id))
+        ));
     `);
-    return "pools_admin_insert policy in place";
+    return "pools admin insert/select/update policies in place";
+  });
+
+  await step("pools diagnostic: latest rows (read-only)", async () => {
+    const r = await sql("SELECT id, club_id, event_name, published, paid, plan, created_at FROM public.pools ORDER BY created_at DESC LIMIT 10;");
+    return JSON.parse(r);
   });
 
   await step("create payments table + owner read policy", async () => {

@@ -3561,11 +3561,18 @@ function ClubMajorsPrototype() {
               alert("The 2026 Season Pass checkout isn't configured yet — choose another plan or try again shortly.");
               return;
             }
-            if (dbPool) {
-              try {
-                await savePool(dbPool.id, { published: true, plan });
-                setDbPool((p) => (p ? { ...p, published: true, plan } : p));
-              } catch (e) {}
+            /* publish FIRST, loudly — a silent failure here once let pros pay
+               for pools that never reached the database */
+            if (!dbPool) {
+              alert("No pool draft found to publish — go back to Pool Setup and press Review & publish again.");
+              return;
+            }
+            try {
+              await savePool(dbPool.id, { published: true, plan });
+              setDbPool((p) => (p ? { ...p, published: true, plan } : p));
+            } catch (e) {
+              alert("The pool could not be published: " + ((e && e.message) || e) + "\nNo charge was made — please try again or contact support.");
+              return;
             }
             setSetup((s) => ({ ...s, published: true }));
             if (payUrl) window.open(payUrl, "_blank", "noopener");
