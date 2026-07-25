@@ -3141,6 +3141,36 @@ function ClubMajorsPrototype() {
                       onClick={async () => {
                         const evName = selectedEvent.name.split(" · ")[0];
                         let poolAfter = dbPool;
+                        if (!dbPool && dbClub) {
+                          /* FIRST pool for this club: the row must exist in the DB
+                             before checkout can publish it — this was silently
+                             skipped for years and fresh clubs "published" pools
+                             that never left local state */
+                          try {
+                            const { data: np, error } = await sb
+                              .from("pools")
+                              .insert({
+                                club_id: dbClub.id,
+                                published: false,
+                                tiebreaker_on: !!setup.tiebreakerOn,
+                                entry_fee: Number(setup.entryFee) || 0,
+                                deadline: new Date(setup.deadline).toISOString(),
+                                rules: setup.rules,
+                                payouts: setup.payouts,
+                                plan: setup.billing,
+                                event_name: evName,
+                              })
+                              .select()
+                              .single();
+                            if (error) throw error;
+                            setDbPool(np);
+                            poolAfter = np;
+                            setLocked(new Date(np.deadline).getTime() < Date.now());
+                          } catch (e) {
+                            setSaveMsg("Could not create the pool: " + (e.message || e));
+                            return;
+                          }
+                        }
                         if (dbPool) {
                           try {
                             const poolFields = {
@@ -3504,7 +3534,10 @@ function ClubMajorsPrototype() {
               return;
             }
             if (dbPool) {
-              try { await savePool(dbPool.id, { published: true, plan }); } catch (e) {}
+              try {
+                await savePool(dbPool.id, { published: true, plan });
+                setDbPool((p) => (p ? { ...p, published: true, plan } : p));
+              } catch (e) {}
             }
             setSetup((s) => ({ ...s, published: true }));
             if (payUrl) window.open(payUrl, "_blank", "noopener");
