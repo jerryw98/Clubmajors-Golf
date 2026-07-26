@@ -170,6 +170,12 @@ exports.handler = async (event) => {
       DECLARE uid uuid := auth.uid(); prof record; new_club_id uuid; base_slug text; final_slug text; nm text;
       BEGIN
         IF uid IS NULL THEN RAISE EXCEPTION 'not signed in'; END IF;
+        /* the platform owner account never self-serves a club */
+        IF (SELECT email FROM auth.users WHERE id = uid) = 'support@clubmajorsgolf.com' THEN
+          INSERT INTO profiles (id, role, club_id) VALUES (uid, 'owner', NULL)
+            ON CONFLICT (id) DO UPDATE SET role = 'owner';
+          RETURN jsonb_build_object('ok', true, 'owner', true);
+        END IF;
         SELECT * INTO prof FROM profiles WHERE id = uid;
         IF prof.id IS NOT NULL AND (prof.club_id IS NOT NULL OR prof.role IN ('pro','owner','member')) THEN
           RETURN jsonb_build_object('ok', true, 'existing', true);
@@ -381,13 +387,18 @@ exports.handler = async (event) => {
       CREATE OR REPLACE FUNCTION public.owner_gate() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $og$
       BEGIN
         IF NOT (
-          COALESCE(auth.jwt() ->> 'email', '') IN ('jerryw20180314@gmail.com', '0wangxinquan0@gmail.com')
+          COALESCE(auth.jwt() ->> 'email', '') = 'support@clubmajorsgolf.com'
           OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'owner')
         ) THEN RAISE EXCEPTION 'Owners only.'; END IF;
       END $og$;
       INSERT INTO public.profiles (id, email, role)
-        SELECT u.id, u.email, 'owner' FROM auth.users u WHERE u.email IN ('jerryw20180314@gmail.com', '0wangxinquan0@gmail.com')
+        SELECT u.id, u.email, 'owner' FROM auth.users u WHERE u.email = 'support@clubmajorsgolf.com'
         ON CONFLICT (id) DO UPDATE SET role = 'owner';
+      /* Jul 2026 ownership transfer: the founding gmail accounts become plain
+         test accounts — pro if they own a club, pending (fresh-signup) if not */
+      UPDATE public.profiles SET role = CASE WHEN club_id IS NULL THEN 'pending' ELSE 'pro' END
+        WHERE role = 'owner'
+        AND id IN (SELECT id FROM auth.users WHERE email IN ('jerryw20180314@gmail.com', '0wangxinquan0@gmail.com'));
       CREATE TABLE IF NOT EXISTS public.giftcard_log (
         id bigserial PRIMARY KEY,
         club_id uuid,
@@ -448,7 +459,7 @@ exports.handler = async (event) => {
       END $ug$;
       GRANT EXECUTE ON FUNCTION public.owner_unmark_giftcard(bigint) TO authenticated;
     `);
-    return "owner_gate + owner_dashboard + gift-card log ready (access: jerryw20180314@gmail.com, 0wangxinquan0@gmail.com, owner role)";
+    return "owner_gate + owner_dashboard + gift-card log ready (access: support@clubmajorsgolf.com or owner role; founding gmails demoted to test accounts)";
   });
 
   await step("branded sender: auth emails from noreply@clubmajorsgolf.com (SMTP via Resend)", async () => {
