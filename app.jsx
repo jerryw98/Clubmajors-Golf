@@ -2866,9 +2866,6 @@ function ClubMajorsPrototype() {
                       : "LIVE · SIM"
                     : "PAUSED"}
                 </span>
-                <button className="live-toggle" onClick={() => setLive((v) => !v)}>
-                  {live ? "Pause" : "Resume"}
-                </button>
               </span>
             </div>
             <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(247,242,228,0.12)" }}>
