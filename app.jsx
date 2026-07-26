@@ -2615,10 +2615,8 @@ function ClubMajorsPrototype() {
                 {(() => {
                   const mgrs = pros.filter((p) => (((p && p.first) || "") + ((p && p.last) || "")).trim());
                   return mgrs.length > 0 ? (
-                    <div style={{ marginTop: 16, borderTop: "1px dotted var(--paper-line)", paddingTop: 12 }}>
-                      <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
-                        Pool manager{mgrs.length > 1 ? "s" : ""}
-                      </div>
+                    <div style={{ marginTop: 22 }}>
+                      <h3>Pool manager{mgrs.length > 1 ? "s" : ""}</h3>
                       {mgrs.map((p, i) => (
                         <div key={i} style={{ fontFamily: "'Source Serif 4', serif", fontSize: 14.5, color: "var(--pine)", fontWeight: 600, lineHeight: 1.7 }}>
                           {(((p.first || "") + " " + (p.last || "")).trim() + (p.pga ? ", PGA" : ""))}
@@ -2773,12 +2771,16 @@ function ClubMajorsPrototype() {
                 value={entryName}
                 onChange={(e) => setEntryName(e.target.value)}
                 aria-label="Entry name"
+                disabled={locked}
+                style={locked ? { opacity: 0.45, cursor: "not-allowed", background: "#EDE8DA" } : undefined}
               />
               <input
                 placeholder="Member name"
                 value={memberName}
                 onChange={(e) => setMemberName(e.target.value)}
                 aria-label="Member name"
+                disabled={locked}
+                style={locked ? { opacity: 0.45, cursor: "not-allowed", background: "#EDE8DA" } : undefined}
               />
               {setup.tiebreakerOn && (
                 <input
@@ -2786,9 +2788,13 @@ function ClubMajorsPrototype() {
                   value={tiebreak}
                   onChange={(e) => setTiebreak(e.target.value)}
                   aria-label={teamMode ? "Tiebreaker: your guess at the final Cup score" : "Tiebreaker: your guess at the winning golfer's final score to par"}
+                  disabled={locked}
+                  style={locked ? { opacity: 0.45, cursor: "not-allowed", background: "#EDE8DA" } : undefined}
                 />
               )}
-              <span className="count">{pickCount}/6 picked</span>
+              <span className="count" style={locked ? { color: "var(--under)", fontWeight: 600 } : undefined}>
+                {locked ? "Entry deadline has passed" : pickCount + "/6 picked"}
+              </span>
               <button className="btn btn-ghost btn-small" disabled={locked || pickCount === 0} onClick={() => setPicks({})}>
                 Clear picks
               </button>
