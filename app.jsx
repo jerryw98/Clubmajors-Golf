@@ -1370,7 +1370,7 @@ function generateRules(s) {
       "Most total points wins the pool.",
     ];
     if (s.tiebreakerOn) lines.push("Tiebreaker — closest guess at the final Cup score (e.g., 17\u201313). Golf shop has final say.");
-    lines.push(s.maxEntries === "unlimited" ? "Entries — unlimited entries per member." : "Entries — up to " + s.maxEntries + " per member.");
+    lines.push(s.maxEntries === "unlimited" ? "Entries — no limit per member." : "Entries — up to " + s.maxEntries + " per member.");
     return lines;
   }
   const lines = [];
@@ -1398,7 +1398,7 @@ function generateRules(s) {
       : "Missed cuts score their 36-hole total +8 per weekend round (withdrawals too — same-tier swaps OK before the deadline)."
   );
   if (s.tiebreakerOn) lines.push("Tiebreaker — closest guess at the winning score, then a scorecard playoff of best pick vs. best pick. Golf shop has final say.");
-  lines.push(s.maxEntries === "unlimited" ? "Entries — unlimited entries per member." : "Entries — up to " + s.maxEntries + " per member.");
+  lines.push(s.maxEntries === "unlimited" ? "Entries — no limit per member." : "Entries — up to " + s.maxEntries + " per member.");
   return lines;
 }
 
@@ -1782,7 +1782,7 @@ function ClubMajorsPrototype() {
     : isPlatformEvent
     ? EVENT.eyebrow
     : poolEvent && poolEvent.match
-    ? PRICING_LABEL[poolEvent.match.type] + " · " + poolEvent.match.dates
+    ? PRICING_LABEL[poolEvent.match.type] + " · " + eventDates(poolEvent.match)
     : "Members' Pool";
   const heroVenue = isPlatformEvent
     ? EVENT.venue + " · " + EVENT.location + " · " + EVENT.dates
@@ -2612,6 +2612,21 @@ function ClubMajorsPrototype() {
                     </div>
                   ) : null
                 )}
+                {(() => {
+                  const mgrs = pros.filter((p) => (((p && p.first) || "") + ((p && p.last) || "")).trim());
+                  return mgrs.length > 0 ? (
+                    <div style={{ marginTop: 16, borderTop: "1px dotted var(--paper-line)", paddingTop: 12 }}>
+                      <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
+                        Pool manager{mgrs.length > 1 ? "s" : ""}
+                      </div>
+                      {mgrs.map((p, i) => (
+                        <div key={i} style={{ fontFamily: "'Source Serif 4', serif", fontSize: 14.5, color: "var(--pine)", fontWeight: 600, lineHeight: 1.7 }}>
+                          {(((p.first || "") + " " + (p.last || "")).trim() + (p.pga ? ", PGA" : ""))}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
 
@@ -2620,25 +2635,9 @@ function ClubMajorsPrototype() {
               <button className="btn-link" onClick={() => setView("board")}>View live leaderboard →</button>
             </div>
 
-            {(() => {
-              const mgrs = pros.filter((p) => (((p && p.first) || "") + ((p && p.last) || "")).trim());
-              return mgrs.length > 0 ? (
-                <div style={{ textAlign: "left", marginTop: 20 }}>
-                  <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
-                    Pool manager{mgrs.length > 1 ? "s" : ""}
-                  </div>
-                  {mgrs.map((p, i) => (
-                    <div key={i} style={{ fontFamily: "'Source Serif 4', serif", fontSize: 14.5, color: "var(--pine)", fontWeight: 600, lineHeight: 1.7 }}>
-                      {(((p.first || "") + " " + (p.last || "")).trim())}
-                    </div>
-                  ))}
-                </div>
-              ) : null;
-            })()}
-
             <p className="pro-note">
-              Entry fees are collected and paid out by the golf shop. This site tracks picks and standings only.
-              Questions? Ask at the golf shop.
+              Entry fees are collected and paid out by the golf shop — this site only tracks picks and standings.
+              Questions? Ask in the shop.
             </p>
           </>
         )}
@@ -3497,6 +3496,11 @@ function ClubMajorsPrototype() {
                       onChange={(e) => setPros((arr) => { const a = arr.length ? [...arr] : [{ first: "", last: "" }]; a[i] = { ...a[i], first: e.target.value }; return a; })} />
                     <input className="club-name-input" style={{ flex: 1, minWidth: 0 }} placeholder="Last name" value={p.last || ""} aria-label="Pro last name"
                       onChange={(e) => setPros((arr) => { const a = arr.length ? [...arr] : [{ first: "", last: "" }]; a[i] = { ...a[i], last: e.target.value }; return a; })} />
+                    <label className="mono" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, letterSpacing: "0.08em", color: "var(--muted)", cursor: "pointer", whiteSpace: "nowrap" }} title="Show “, PGA” after this name">
+                      <input type="checkbox" checked={!!p.pga}
+                        onChange={(e) => setPros((arr) => { const a = arr.length ? [...arr] : [{ first: "", last: "" }]; a[i] = { ...a[i], pga: e.target.checked }; return a; })} />
+                      PGA
+                    </label>
                     {pros.length > 1 && (
                       <button className="btn btn-ghost" style={{ padding: "0 14px" }} aria-label="Remove pro" onClick={() => setPros((arr) => arr.filter((_, j) => j !== i))}>&times;</button>
                     )}
@@ -3704,7 +3708,7 @@ function ClubMajorsPrototype() {
                 <button
                   className="btn btn-primary"
                   onClick={async () => {
-                    const theme = { themeId, logoBg, noLogo, tagline: tagline.trim(), pros: pros.map((p) => ({ first: ((p && p.first) || "").trim(), last: ((p && p.last) || "").trim() })).filter((p) => p.first || p.last) };
+                    const theme = { themeId, logoBg, noLogo, tagline: tagline.trim(), pros: pros.map((p) => ({ first: ((p && p.first) || "").trim(), last: ((p && p.last) || "").trim(), pga: !!(p && p.pga) })).filter((p) => p.first || p.last) };
                     const newSlug = clubName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || dbClub.slug;
                     try {
                       /* keep the members' link in sync with the club name */
