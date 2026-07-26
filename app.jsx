@@ -2481,52 +2481,76 @@ function ClubMajorsPrototype() {
         {/* ============ POOL HOME ============ */}
         {/* ============ PLATFORM FRONT DOOR (buyers: pros & GMs) ============ */}
         {view === "landing" && (
-          <div style={{ maxWidth: 760, margin: "36px auto 0", textAlign: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
-              <CMLogo size={88} />
-              <h1 style={{ margin: 0, fontFamily: "'Archivo Black', sans-serif", fontSize: 42, lineHeight: 1.1, letterSpacing: "-0.03em", color: "#16130F" }}>
-                Major-championship pools for your club
-              </h1>
-              <p className="set-sub" style={{ fontSize: 17, maxWidth: 580, margin: 0 }}>
-                Members pick six golfers from an odds-tiered picksheet. Live scoring, cut math, standings and
-                tiebreakers run themselves — the golf shop shares one link and hosts the trophy. Entry fees never
-                touch the platform: clubs pay a flat software fee, nothing else.
-              </p>
-              <div className="cta-row" style={{ justifyContent: "center", marginTop: 4 }}>
-                <button className="btn btn-primary" onClick={() => { window.location.href = "/demo"; }}>See the live demo</button>
-                <button className="btn btn-ghost" onClick={() => setView("signup")}>Set up your club</button>
+          <div style={{ maxWidth: 880, margin: "34px auto 0" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "40px 56px", alignItems: "center" }}>
+              <div style={{ flex: "1 1 400px", minWidth: 300 }}>
+                <div className="mono" style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--under)", marginBottom: 14 }}>
+                  Golf tournament pools · Private clubs
+                </div>
+                <h1 style={{ margin: 0, fontFamily: "'Archivo Black', sans-serif", fontSize: 40, lineHeight: 1.08, letterSpacing: "-0.03em", color: "#16130F" }}>
+                  Major-championship pools for your club
+                </h1>
+                <p className="set-sub" style={{ fontSize: 16.5, margin: "18px 0 24px" }}>
+                  Your members pick six golfers before Thursday's first tee. After that the pool runs itself:
+                  live scores, the cut, the standings. You share one link and hand out the trophy.
+                  Entry fees stay in your shop. We charge a flat software fee and touch nothing else.
+                </p>
+                <div className="cta-row">
+                  <button className="btn btn-primary" onClick={() => { window.location.href = "/demo"; }}>See the live demo</button>
+                  <button className="btn btn-ghost" onClick={() => setView("signup")}>Set up your club</button>
+                </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "26px 40px", width: "100%", textAlign: "left", marginTop: 28, borderTop: "1px dotted var(--paper-line)", paddingTop: 30 }}>
-                {[
-                  ["Scores you can trust", "Every score is cross-checked around the clock against multiple independent data sources, so your members always see the most up-to-date, correct numbers."],
-                  ["Made for private clubs", "Designed for golf and catered to country clubs — your crest, your colors, your rules. It feels tailored to your club, never like a generic pool site."],
-                  ["Set up in minutes", "Built for busy golf shops: publish a pool in one sitting and share a single link. No spreadsheets, no member accounts, nothing to install."],
-                  ["Support that answers", "A dedicated support team answers every single email in a timely manner — before, during, and after tournament weekends."],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, letterSpacing: "-0.01em", color: "#16130F", marginBottom: 8 }}>{k}</div>
-                    <p className="set-sub" style={{ margin: 0 }}>{v}</p>
+              <div style={{ flex: "0 1 300px", minWidth: 270 }}>
+                {/* the signature leaderboard, in miniature — a real artifact, not a stock illustration */}
+                <div style={{ background: "#15382B", borderRadius: 6, padding: "18px 18px 8px", boxShadow: "0 18px 44px rgba(22,19,15,0.22)", transform: "rotate(-1.2deg)" }}>
+                  <div className="mono" style={{ fontSize: 9.5, letterSpacing: "0.26em", textTransform: "uppercase", color: "#D8B45A", marginBottom: 10 }}>
+                    Clubhouse Leaderboard · Rd 4
+                  </div>
+                  {[["1", "Breakfast Ball Boys", "-31"], ["2", "Cart Path Only", "-28"], ["T3", "Mulligan Stew", "-26"], ["T3", "The Shankopotamus", "-26"], ["5", "Fore Play", "-24"]].map(([pos, name, sc], i) => (
+                    <div key={name} style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "7px 2px", borderTop: i ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
+                      <span className="mono" style={{ color: "#D8B45A", fontSize: 11, width: 24, flex: "none" }}>{pos}</span>
+                      <span style={{ flex: 1, color: "#F7F2E4", fontFamily: "'Source Serif 4', serif", fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
+                      <span className="mono" style={{ color: "#E3CE8F", fontSize: 13 }}>{sc}</span>
+                    </div>
+                  ))}
+                  <div className="mono" style={{ fontSize: 8.5, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(247,242,228,0.5)", padding: "10px 2px 8px" }}>
+                    Live · best 4 of 6 count
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "26px 40px", marginTop: 44, borderTop: "1px dotted var(--paper-line)", paddingTop: 32 }}>
+              {[
+                ["Scores you can trust", "We check every score against multiple independent data feeds, around the clock. If a feed goes stale or two sources disagree, we catch it before your members do."],
+                ["Made for private clubs", "Your crest, your colors, your rules, your payouts. Members see their club's pool. They never see ours."],
+                ["Set up in minutes", "Pick the event, set the entry fee, publish. The picksheet and leaderboard build themselves from the tournament field."],
+                ["Support that answers", "Email us and a person replies. Quickly, including tournament weekends."],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, letterSpacing: "-0.01em", color: "#16130F", marginBottom: 8 }}>{k}</div>
+                  <p className="set-sub" style={{ margin: 0 }}>{v}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ borderTop: "1px dotted var(--paper-line)", paddingTop: 26, marginTop: 34 }}>
+              <div className="mono" style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 20 }}>
+                Flat software fee — entry fees never touch the platform
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap" }}>
+                {[["$30", "2026 Season Pass"], ["$75", "majors"], ["$30", "non-major events"], ["$330", "annual pass · 2027 onward"]].map(([p, l], i) => (
+                  <div key={l} style={{ padding: i ? "2px 30px" : "2px 30px 2px 0", borderLeft: i ? "1px dotted var(--paper-line)" : "none" }}>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 30, color: "#16130F", lineHeight: 1 }}>{p}</div>
+                    <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginTop: 8 }}>{l}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ width: "100%", borderTop: "1px dotted var(--paper-line)", paddingTop: 26, marginTop: 8 }}>
-                <div className="mono" style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 20 }}>
-                  Flat software fee — entry fees never touch the platform
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
-                  {[["$30", "2026 Season Pass"], ["$75", "majors"], ["$30", "non-major events"], ["$330", "annual pass · 2027 forward"]].map(([p, l], i) => (
-                    <div key={l} style={{ padding: "2px 30px", borderLeft: i ? "1px dotted var(--paper-line)" : "none" }}>
-                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 30, color: "#16130F", lineHeight: 1 }}>{p}</div>
-                      <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginTop: 8 }}>{l}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <p className="pro-note" style={{ marginTop: 0 }}>
-                Every pool includes the odds-tiered picksheet, the live leaderboard, and printable picksheets
-                for the grill room.
+              <p className="pro-note" style={{ marginTop: 22 }}>
+                Every pool comes with the odds-tiered picksheet, a live leaderboard, and a printable
+                picksheet for the grill room.
               </p>
-              <p className="set-sub" style={{ fontSize: 13, opacity: 0.8 }}>
+              <p className="set-sub" style={{ fontSize: 13, opacity: 0.8, marginTop: 10 }}>
                 Looking for your club's pool? Open the link your golf shop shared with you.
               </p>
             </div>
@@ -2537,8 +2561,8 @@ function ClubMajorsPrototype() {
           <section className="set-block" style={{ maxWidth: 560, margin: "40px auto 0", textAlign: "center" }}>
             <h3 className="set-title" style={{ borderColor: "var(--brass)" }}>No active pool right now</h3>
             <p className="set-sub" style={{ marginTop: 10 }}>
-              {(dbClub && dbClub.name) || "This club"} hasn't published a pool yet. When the golf shop opens the
-              next one, the picksheet and live leaderboard will appear right here — check back soon.
+              {(dbClub && dbClub.name) || "This club"} hasn't published a pool yet. When the golf shop opens
+              one, the picksheet and leaderboard will be right here.
             </p>
           </section>
         )}
@@ -2664,9 +2688,9 @@ function ClubMajorsPrototype() {
               <section className="set-block" style={{ textAlign: "center", padding: "36px 20px" }}>
                 <h3 className="set-title" style={{ borderColor: "var(--brass)" }}>Field coming soon</h3>
                 <p className="set-sub" style={{ marginTop: 8 }}>
-                  The official field and odds for <strong>{dbPool ? dbPool.event_name : "this event"}</strong> haven't
-                  been posted yet{fieldEventName ? " — the odds board is still on " + fieldEventName : ""}. The picksheet
-                  opens the moment the new field is announced, usually the weekend before the tournament. Check back soon.
+                  The field for <strong>{dbPool ? dbPool.event_name : "this event"}</strong> isn't posted
+                  yet{fieldEventName ? " (the odds board is still on " + fieldEventName + ")" : ""}. Picks open as soon
+                  as the field is announced, usually the weekend before the tournament.
                 </p>
               </section>
             )}
@@ -2981,8 +3005,8 @@ function ClubMajorsPrototype() {
 
             {!hasPublishedPool && (
               <p className="sheet-sub" style={{ marginTop: -6 }}>
-                New here? <a href="/demo" target="_blank" rel="noopener" style={{ color: "var(--pine)", fontWeight: 600 }}>Open the live demo ↗</a> to
-                see exactly what your members will get — same pool, in your club's own colors.
+                New here? <a href="/demo" target="_blank" rel="noopener" style={{ color: "var(--pine)", fontWeight: 600 }}>Open the live demo ↗</a> —
+                that's what your members will get, in your club's colors.
               </p>
             )}
 
