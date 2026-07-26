@@ -1882,7 +1882,7 @@ function ClubMajorsPrototype() {
      page), not a club shell. Invite links keep their sign-in flow. */
   const platformLanding = !DEMO && !INVITE && !session && !dbClub;
   const NAV_TABS = platformLanding
-    ? [{ id: "landing", label: "Overview", roles: ["guest"] }, { id: "signin", label: "Club Admin", roles: ["guest"] }]
+    ? [{ id: "signin", label: "Club Admin", roles: ["guest"] }]
     : !DEMO && !hasPublishedPool
     ? TABS.filter((t) => (isAdminRole ? !["home", "picks", "board"].includes(t.id) : !["picks", "board"].includes(t.id)))
     : TABS;
@@ -2434,7 +2434,7 @@ function ClubMajorsPrototype() {
       <header className="masthead">
         <div className="masthead-inner">
           {platformLanding ? (
-            <div className="club-line">
+            <div className="club-line" style={{ cursor: "pointer" }} onClick={() => setView("landing")} title="ClubMajors home">
               <CMLogo size={40} />
               <div>
                 <div className="club-name" style={{ fontFamily: "'Archivo Black', sans-serif", letterSpacing: "-0.02em" }}>ClubMajors</div>
@@ -2496,13 +2496,24 @@ function ClubMajorsPrototype() {
                 <button className="btn btn-primary" onClick={() => { window.location.href = "/demo"; }}>See the live demo</button>
                 <button className="btn btn-ghost" onClick={() => setView("signup")}>Set up your club</button>
               </div>
-              <div className="facts" style={{ border: "1px solid var(--paper-line)", gridTemplateColumns: "repeat(4, 1fr)", width: "100%", marginTop: 18 }}>
-                <div className="fact"><div className="fact-k">Any event</div><div className="fact-v mono">$30</div></div>
-                <div className="fact"><div className="fact-k">Majors</div><div className="fact-v mono">$75</div></div>
-                <div className="fact"><div className="fact-k">2026 Season Pass</div><div className="fact-v mono">$30</div></div>
-                <div className="fact"><div className="fact-k">Annual · unlimited</div><div className="fact-v mono">$330</div></div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "26px 40px", width: "100%", textAlign: "left", marginTop: 28, borderTop: "1px dotted var(--paper-line)", paddingTop: 30 }}>
+                {[
+                  ["Scores you can trust", "Every score is cross-checked around the clock against multiple independent data sources, so your members always see the most up-to-date, correct numbers."],
+                  ["Made for private clubs", "Designed for golf and catered to country clubs — your crest, your colors, your rules. It feels tailored to your club, never like a generic pool site."],
+                  ["Set up in minutes", "Built for busy golf shops: publish a pool in one sitting and share a single link. No spreadsheets, no member accounts, nothing to install."],
+                  ["Support that answers", "A dedicated support team answers every single email in a timely manner — before, during, and after tournament weekends."],
+                ].map(([k, v]) => (
+                  <div key={k}>
+                    <div className="mono" style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--pine)", marginBottom: 7 }}>{k}</div>
+                    <p className="set-sub" style={{ margin: 0 }}>{v}</p>
+                  </div>
+                ))}
               </div>
-              <p className="pro-note" style={{ marginTop: 6 }}>
+              <p className="mono" style={{ fontSize: 12.5, letterSpacing: "0.06em", lineHeight: 2, color: "var(--pine)", borderTop: "1px dotted var(--paper-line)", paddingTop: 24, marginTop: 8, width: "100%" }}>
+                FLAT SOFTWARE FEE — $30 any event · $75 majors · $330/year unlimited<br />
+                or every remaining 2026 event for $30 with the Season Pass
+              </p>
+              <p className="pro-note" style={{ marginTop: 0 }}>
                 Every pool includes the odds-tiered picksheet, the live leaderboard, printable picksheets, and the
                 only match-play Presidents Cup pool on the market this September.
               </p>
