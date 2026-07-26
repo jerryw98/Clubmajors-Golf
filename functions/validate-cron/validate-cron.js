@@ -116,7 +116,11 @@ exports.handler = async (event) => {
             const list = Array.isArray(d) ? d : d.data || [];
             const out = list.map((r) => {
               const nm = dgName(r.player_name || r.name);
-              return { firstName: nm.firstName, lastName: nm.lastName, total: vToPar(r.current_score), cut: /cut|wd|dq/i.test(String(r.current_pos || "") + String(r.status || "")) };
+              /* DataGolf doesn't reliably mark cuts (esp. around the Friday cut
+                 line) — absence of a cut marker is NOT a claim the player is
+                 active. Only a positive marker counts; otherwise "doesn't say". */
+              const dgCut = /cut|wd|dq/i.test(String(r.current_pos || "") + String(r.status || "")) ? true : null;
+              return { firstName: nm.firstName, lastName: nm.lastName, total: vToPar(r.current_score), cut: dgCut };
             }).filter((x) => x.lastName && x.total !== null);
             return out.length ? out : null;
           })
@@ -163,10 +167,11 @@ exports.handler = async (event) => {
       const isCut = saysCut.length > 0; /* trusted from whichever feed states it */
       if (isCut) return; /* agreed MC — feeds report cut players' numbers differently; nothing to compare */
       const vals = present.map((x) => (x.pl.total == null || Math.abs(x.pl.total) > 30 ? null : x.pl.total));
-      /* vendors refresh on different cadences — during live play a 1-stroke gap
-         is timing lag, not bad data. Only a spread of 2+ strokes is an incident. */
+      /* vendors refresh on different cadences — during live play a 2-stroke gap
+         is one un-refreshed eagle on a single hole, i.e. timing lag, not bad
+         data (seen live: Koivun -15 vs -13, self-healed). Only 3+ is an incident. */
       const nums = vals.filter((v) => v !== null);
-      if (nums.length >= 2 && Math.max.apply(null, nums) - Math.min.apply(null, nums) >= 2) {
+      if (nums.length >= 2 && Math.max.apply(null, nums) - Math.min.apply(null, nums) >= 3) {
         mismatches.push(player + ": " + present.map((x, i) => x.feed + " " + (vals[i] == null ? "n/a" : fmtPar(vals[i]))).join(" · "));
       }
     });

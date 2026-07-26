@@ -653,8 +653,12 @@ function OwnerDashboard({ liveSource }) {
           /* 3 · active players: compare to-par totals, ignoring raw-stroke
              style values (|x| > 30 means someone sent 72-hole strokes) */
           const vals = present.map((x) => (x.pl.total == null || Math.abs(x.pl.total) > 30 ? null : x.pl.total));
-          const comparable = vals.filter((v) => v !== null).map((v) => fmtPar(v));
-          if (comparable.length >= 2 && new Set(comparable).size > 1) {
+          const nums = vals.filter((v) => v !== null);
+          /* vendors refresh on different cadences — a 1-2 stroke gap during live
+             play is one un-refreshed hole (timing lag), not bad data. Match the
+             validate-cron watchdog: only a 3+ stroke spread is a mismatch. */
+          const spread = nums.length >= 2 ? Math.max.apply(null, nums) - Math.min.apply(null, nums) : 0;
+          if (spread >= 3) {
             mismatches.push({
               player,
               detail: present.map((x, i) => x.feed + " " + (vals[i] == null ? "n/a" : fmtPar(vals[i]))).join(" · "),
@@ -2926,11 +2930,15 @@ function ClubMajorsPrototype() {
                   <strong>{selectedEvent.name}</strong> · {selectedEvent.dates} · Picks lock {new Date(setup.deadline).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}
                 </p>
                 <p className="set-sub" style={{ marginBottom: 8 }}>
-                  {setup.billing === "annual"
-                    ? `Charged $${ANNUAL_PRICE} — ClubMajors Annual Pass now active through Jul 2027.`
-                    : setup.billing === "season"
-                    ? `2026 Season Pass active through Dec 31, 2026 — every remaining PGA Tour event included.`
-                    : `Single event (${PRICING_LABEL[selectedEvent.type]}) — $${eventFee} platform fee.`} Receipt sent to the golf shop email.
+                  {passActive
+                    ? (dbClub && dbClub.plan === "annual"
+                        ? "ClubMajors Annual Pass active" + (dbClub.paid_until ? " through " + new Date(dbClub.paid_until).toLocaleDateString([], { month: "short", year: "numeric" }) : "") + " — every pool and edit included."
+                        : "2026 Season Pass active through Dec 31, 2026 — every remaining PGA Tour event included.")
+                    : (setup.billing === "annual"
+                        ? `Charged $${ANNUAL_PRICE} — ClubMajors Annual Pass now active for the next 12 months.`
+                        : setup.billing === "season"
+                        ? `2026 Season Pass active through Dec 31, 2026 — every remaining PGA Tour event included.`
+                        : `Single event (${PRICING_LABEL[selectedEvent.type]}) — $${eventFee} platform fee.`) + " Receipt sent to the golf shop email."}
                 </p>
                 <p className="set-sub">The member invite link and printable picksheet are ready to share.</p>
                 {saveMsg && <p className="set-sub" style={{ color: "var(--pine)" }}>{saveMsg}</p>}
@@ -3201,8 +3209,15 @@ function ClubMajorsPrototype() {
                 </section>
 
                 <section className="set-block">
-                  <h3 className="set-title">Publish — platform fee</h3>
-                  <p className="set-sub">This is what the club pays ClubMajors. Member entry fees stay with the golf shop.</p>
+                  <h3 className="set-title">{feeCovered ? "Publish" : "Publish — platform fee"}</h3>
+                  <p className="set-sub">
+                    {feeCovered
+                      ? passActive
+                        ? "Covered by your " + (dbClub && dbClub.plan === "annual" ? "Annual Pass" : "2026 Season Pass") + " — publishing pools and edits never costs extra."
+                        : "This pool's platform fee is already paid — publishing your changes costs nothing."
+                      : "This is what the club pays ClubMajors. Member entry fees stay with the golf shop."}
+                  </p>
+                  {!feeCovered && (<>
                   <label className={`bill-option ${setup.billing === "single" ? "selected" : ""}`}>
                     <input type="radio" name="billing" checked={setup.billing === "single"} onChange={() => setSetup((s) => ({ ...s, billing: "single" }))} />
                     <span>
@@ -3224,6 +3239,7 @@ function ClubMajorsPrototype() {
                       <span className="bill-desc">Unlimited pools for every PGA Tour event, all four majors included. Pays for itself by the fifth event.</span>
                     </span>
                   </label>
+                  </>)}
                   <div className="cta-row" style={{ marginTop: 16 }}>
                     <button
                       className="btn btn-primary"
@@ -3345,10 +3361,12 @@ function ClubMajorsPrototype() {
                         : <>Review &amp; publish · ${setup.billing === "annual" ? ANNUAL_PRICE : setup.billing === "season" ? SEASON_PRICE : eventFee}</>}
                     </button>
                   </div>
-                  <p className="pro-note" style={{ marginTop: 16 }}>
-                    Next you'll confirm the platform fee and pay by card through Stripe's secure checkout.
-                    Member entry fees are separate — those stay with the golf shop.
-                  </p>
+                  {!feeCovered && (
+                    <p className="pro-note" style={{ marginTop: 16 }}>
+                      Next you'll confirm the platform fee and pay by card through Stripe's secure checkout.
+                      Member entry fees are separate — those stay with the golf shop.
+                    </p>
+                  )}
                 </section>
               </div>
             )}
