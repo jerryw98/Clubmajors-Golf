@@ -2514,7 +2514,7 @@ function ClubMajorsPrototype() {
                   Flat software fee — entry fees never touch the platform
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
-                  {[["$30", "any event"], ["$75", "majors"], ["$330", "annual · unlimited"], ["$30", "2026 Season Pass"]].map(([p, l], i) => (
+                  {[["$30", "2026 Season Pass"], ["$75", "majors"], ["$30", "non-major events"], ["$330", "annual pass · 2027 forward"]].map(([p, l], i) => (
                     <div key={l} style={{ padding: "2px 30px", borderLeft: i ? "1px dotted var(--paper-line)" : "none" }}>
                       <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 30, color: "#16130F", lineHeight: 1 }}>{p}</div>
                       <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginTop: 8 }}>{l}</div>
