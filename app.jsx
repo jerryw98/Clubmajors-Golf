@@ -2151,14 +2151,14 @@ function ClubMajorsPrototype() {
         .masthead-inner { max-width: 920px; margin: 0 auto; }
         .club-line { display: flex; align-items: center; gap: 14px; }
         .crest { width: 44px; height: 44px; color: var(--brass-bright); flex-shrink: 0; }
-        .club-name { font-size: 19px; font-weight: 600; line-height: 1.15; }
-        .club-sub { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--brass-bright); margin-top: 3px; font-family: 'IBM Plex Mono', monospace; }
-        .tabs { display: flex; gap: 2px; margin-top: 16px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+        .club-name { font-size: 23px; font-weight: 600; line-height: 1.15; }
+        .club-sub { font-size: 12.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--brass-bright); margin-top: 4px; font-family: 'IBM Plex Mono', monospace; }
+        .tabs { display: flex; gap: 4px; margin-top: 18px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
         .tab {
           appearance: none; border: none; cursor: pointer;
           background: transparent; color: rgba(247,242,228,0.85);
-          font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
-          text-transform: uppercase; padding: 10px 10px 12px; white-space: nowrap; flex-shrink: 0;
+          font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.06em;
+          text-transform: uppercase; padding: 10px 12px 12px; white-space: nowrap; flex-shrink: 0;
           border-bottom: 3px solid transparent; margin-bottom: -3px;
         }
         .tab:hover { color: var(--cream); }
