@@ -2528,7 +2528,13 @@ function ClubMajorsPrototype() {
                 ["Support that answers", "Email us and a person replies. Quickly, including tournament weekends."],
               ].map(([k, v]) => (
                 <div key={k}>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, letterSpacing: "-0.01em", color: "#16130F", marginBottom: 8 }}>{k}</div>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
+                    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: 14, height: 18, marginTop: 2 }}>
+                      <span style={{ position: "absolute", left: 0, top: 0, width: 2.5, height: 18, background: "#15382B" }} />
+                      <span style={{ position: "absolute", left: 2.5, top: 0, width: 11.5, height: 9.5, background: "#C2410C", clipPath: "polygon(0 0, 100% 0, 0 100%)" }} />
+                    </span>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, letterSpacing: "-0.01em", color: "#16130F" }}>{k}</div>
+                  </div>
                   <p className="set-sub" style={{ margin: 0 }}>{v}</p>
                 </div>
               ))}
@@ -2549,9 +2555,6 @@ function ClubMajorsPrototype() {
               <p className="pro-note" style={{ marginTop: 22 }}>
                 Every pool comes with the odds-tiered picksheet, a live leaderboard, and a printable
                 picksheet for the grill room.
-              </p>
-              <p className="set-sub" style={{ fontSize: 13, opacity: 0.8, marginTop: 10 }}>
-                Looking for your club's pool? Open the link your golf shop shared with you.
               </p>
             </div>
           </div>
