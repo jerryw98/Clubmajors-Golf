@@ -1473,6 +1473,7 @@ function ClubMajorsPrototype() {
 
   /* Live SlashGolf scoring (2026 Open Championship) with simulated fallback */
   const [fieldVersion, setFieldVersion] = useState(0);
+  const [fieldEventName, setFieldEventName] = useState("");
   useEffect(() => {
     if (DEMO) return;
     let dead = false;
@@ -1481,18 +1482,25 @@ function ClubMajorsPrototype() {
       fetch("/.netlify/functions/leaderboard?view=odds").then((r) => r.json()).catch(() => null),
     ])
       .then(([d, oddsResp]) => {
-        if (dead || !d || !Array.isArray(d.players) || d.players.length < 60) return;
-        /* preferred: tier the whole field by live win odds (any event) */
+        if (dead) return;
         const liveOdds = oddsResp && Array.isArray(oddsResp.odds) ? oddsResp.odds : [];
-        let dyn = liveOdds.length >= 30 ? buildOddsTiers(d.players, liveOdds) : null;
-        if (!dyn) {
+        /* preferred: the odds board IS the announced field for whatever event
+           the books are pricing — build the picksheet from it ALONE. Joining
+           it against the scoring feed produced a franken-field on transition
+           weekends (odds roll to next week while scores finish this week),
+           which collapsed tiers to 1-3 players. */
+        let dyn = liveOdds.length >= 40 ? buildOddsTiers(liveOdds, liveOdds) : null;
+        if (dyn && oddsResp.eventName) setFieldEventName(String(oddsResp.eventName));
+        if (!dyn && d && Array.isArray(d.players) && d.players.length >= 60) {
           /* fallback: curated seeding (odds shown only for the curated event) */
           const curatedEvent = String(d.tournId) === "100" && String(d.year) === "2026";
           dyn = buildDynamicTiers(d.players, curatedEvent);
         }
         if (dyn && dyn !== BASE_TIERS) {
           TIERS = dyn;
-          PLAYER_INDEX = buildIndex(dyn);
+          /* merge, never replace: entries picked from an earlier field must
+             keep resolving on the leaderboard after the odds board rolls over */
+          PLAYER_INDEX = Object.assign({}, PLAYER_INDEX, buildIndex(dyn));
           setFieldVersion((v) => v + 1);
         }
       })
@@ -1634,6 +1642,24 @@ function ClubMajorsPrototype() {
   const selfServeRef = useRef(false);
   const [selfServeTry, setSelfServeTry] = useState(0);
   const [selfServeErr, setSelfServeErr] = useState("");
+  const [signupNotice, setSignupNotice] = useState("");
+
+  /* Someone used the signup form (club name stored locally) but this email
+     already has a club: say so instead of silently ignoring the typed name. */
+  useEffect(() => {
+    if (DEMO || !session || !profile || !dbClub) return;
+    if (!(profile.role === "pro" || profile.role === "owner")) return;
+    let requested = "";
+    try { requested = localStorage.getItem("cm-signup-club") || ""; } catch (e) {}
+    if (!requested) return;
+    try { localStorage.removeItem("cm-signup-club"); } catch (e) {}
+    if (requested.trim() && requested.trim().toLowerCase() !== String(dbClub.name || "").trim().toLowerCase()) {
+      setSignupNotice(
+        "A club is already set up under this email address — you're signed in to “" + dbClub.name + "”, so “" +
+        requested.trim() + "” wasn't created. You can rename your club any time here in Club Settings."
+      );
+    }
+  }, [session, profile, dbClub]);
   useEffect(() => {
     if (DEMO || INVITE || !session || selfServeRef.current) return;
     if (!profile || profile.role !== "pending") return;
@@ -1735,6 +1761,18 @@ function ClubMajorsPrototype() {
   })();
   const teamMode = !!(poolEvent && poolEvent.match && poolEvent.match.teamEvent);
   const ACTIVE_TIERS = teamMode ? TEAM_TIERS : TIERS;
+  /* Does the odds-board field belong to THIS pool's event? On transition
+     weekends the books price next week's event while this pool may be for a
+     different one — offering the wrong field for picking is worse than
+     waiting. Token match on distinctive words; fail-open when ambiguous. */
+  const fieldMatchesPool = (() => {
+    if (DEMO || teamMode || !fieldEventName || !dbPool || !dbPool.event_name) return true;
+    const stop = ["the", "championship", "classic", "open", "invitational", "tournament", "golf"];
+    const toks = (s) => String(s).toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((w) => w && stop.indexOf(w) === -1);
+    const a = toks(fieldEventName), b = toks(dbPool.event_name);
+    if (!a.length || !b.length) return true;
+    return a.some((w) => b.indexOf(w) !== -1) || b.some((w) => a.indexOf(w) !== -1);
+  })();
   /* The EVENT constant is only correct for the one hardcoded tournament — a
      club with no published pool must never inherit its branding. */
   const isPlatformEvent = !!(poolEvent && poolEvent.match && poolEvent.match.start === EVENT.deadlineISO.slice(0, 10));
@@ -2602,7 +2640,18 @@ function ClubMajorsPrototype() {
               </p>
             )}
 
-            {!locked && (
+            {!fieldMatchesPool && !locked && (
+              <section className="set-block" style={{ textAlign: "center", padding: "36px 20px" }}>
+                <h3 className="set-title" style={{ borderColor: "var(--brass)" }}>Field coming soon</h3>
+                <p className="set-sub" style={{ marginTop: 8 }}>
+                  The official field and odds for <strong>{dbPool ? dbPool.event_name : "this event"}</strong> haven't
+                  been posted yet{fieldEventName ? " — the odds board is still on " + fieldEventName : ""}. The picksheet
+                  opens the moment the new field is announced, usually the weekend before the tournament. Check back soon.
+                </p>
+              </section>
+            )}
+
+            {!locked && fieldMatchesPool && (
               <p className="sheet-sub" style={{ marginTop: -6, marginBottom: 18 }}>
                 <input
                   className="club-name-input"
@@ -2623,7 +2672,7 @@ function ClubMajorsPrototype() {
               </p>
             )}
 
-            {ACTIVE_TIERS.map((tier) => {
+            {fieldMatchesPool && ACTIVE_TIERS.map((tier) => {
               const gq = locked ? "" : golferQuery.trim().toLowerCase();
               const shownPlayers = gq ? tier.players.filter((p) => p.name.toLowerCase().includes(gq)) : tier.players;
               if (gq && shownPlayers.length === 0) return null;
@@ -2670,6 +2719,7 @@ function ClubMajorsPrototype() {
                 </div>
               </section>
             )}
+            {fieldMatchesPool && (
             <div className="submit-bar">
               <input
                 placeholder="Entry name (e.g., Tee Time Bandits)"
@@ -2699,6 +2749,7 @@ function ClubMajorsPrototype() {
                 {editCode ? "Save changes" : "Submit picksheet"}
               </button>
             </div>
+            )}
             {nameTaken && (
               <p className="sheet-sub" style={{ color: "#B3402F", marginTop: 8 }}>
                 That entry name is already on the board — pick another.
@@ -3382,6 +3433,12 @@ function ClubMajorsPrototype() {
             </div>
             <p className="sheet-sub">White-label appearance. Changes apply instantly everywhere members see your pools.</p>
 
+            {signupNotice && (
+              <section className="set-block" style={{ borderLeft: "4px solid var(--brass)", marginBottom: 18 }}>
+                <p className="set-sub" style={{ margin: 0, color: "var(--pine)", fontWeight: 600 }}>{signupNotice}</p>
+              </section>
+            )}
+
             <div className="settings-grid">
               <section className="set-block">
                 <h3 className="set-title">Pool manager{pros.length > 1 ? "s" : ""}</h3>
@@ -3727,11 +3784,7 @@ function ClubMajorsPrototype() {
                     <input className="club-name-input" type="email" placeholder="pro@yourclub.com"
                       value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} aria-label="Email" />
                   </label>
-                  <label className="field">
-                    <span className="field-k">Referred by (optional)</span>
-                    <input className="club-name-input" placeholder="Club or pro who told you about us"
-                      value={signupReferral} onChange={(e) => setSignupReferral(e.target.value)} aria-label="Referred by" />
-                  </label>
+                  {/* Referred-by input removed Jul 2026 (Jerry) — ?ref= links still credit referrals via localStorage */}
                   <div className="cta-row" style={{ marginTop: 16 }}>
                     <button className="btn btn-primary" onClick={handleSignup} disabled={signupState === "sending"}>
                       {signupState === "sending" ? "Setting up…" : "Create my club"}
