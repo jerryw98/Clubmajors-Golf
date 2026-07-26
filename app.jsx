@@ -2165,7 +2165,8 @@ function ClubMajorsPrototype() {
         .tab.active { color: var(--cream); border-bottom-color: var(--brass-bright); }
         .tab:focus-visible { outline: 2px solid var(--brass-bright); outline-offset: -2px; }
 
-        .shell { max-width: 920px; margin: 0 auto; padding: 28px 24px 56px; }
+        .shell { max-width: 920px; margin: 0 auto; padding: 28px 24px 56px; display: flex; flex-direction: column; min-height: calc(100vh - 170px); }
+        .shell > footer.powered { margin-top: auto; padding-top: 160px; }
 
         /* ---------- pool home ---------- */
         .champ-banner {
@@ -3820,7 +3821,7 @@ function ClubMajorsPrototype() {
                 </p>
               ) : (
                 <>
-                  <p className="set-sub">Run major-championship pools for your members. Enter your club and email — we'll set you up and send a one-time sign-in link. No password.</p>
+                  <p className="set-sub">Run major-championship pools for your members. Enter your club and email — we'll set you up and send a one-time sign-in link.</p>
                   <label className="field" style={{ marginTop: 0 }}>
                     <span className="field-k">Club name</span>
                     <input className="club-name-input" placeholder="e.g., Riverside Country Club"
