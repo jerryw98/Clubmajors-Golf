@@ -1882,7 +1882,7 @@ function ClubMajorsPrototype() {
      page), not a club shell. Invite links keep their sign-in flow. */
   const platformLanding = !DEMO && !INVITE && !session && !dbClub;
   const NAV_TABS = platformLanding
-    ? [{ id: "signin", label: "Club Admin", roles: ["guest"] }]
+    ? [{ id: "landing", label: "Overview", roles: ["guest"] }, { id: "signin", label: "Club Admin", roles: ["guest"] }]
     : !DEMO && !hasPublishedPool
     ? TABS.filter((t) => (isAdminRole ? !["home", "picks", "board"].includes(t.id) : !["picks", "board"].includes(t.id)))
     : TABS;
@@ -2504,18 +2504,27 @@ function ClubMajorsPrototype() {
                   ["Support that answers", "A dedicated support team answers every single email in a timely manner — before, during, and after tournament weekends."],
                 ].map(([k, v]) => (
                   <div key={k}>
-                    <div className="mono" style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--pine)", marginBottom: 7 }}>{k}</div>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, letterSpacing: "-0.01em", color: "#16130F", marginBottom: 8 }}>{k}</div>
                     <p className="set-sub" style={{ margin: 0 }}>{v}</p>
                   </div>
                 ))}
               </div>
-              <p className="mono" style={{ fontSize: 12.5, letterSpacing: "0.06em", lineHeight: 2, color: "var(--pine)", borderTop: "1px dotted var(--paper-line)", paddingTop: 24, marginTop: 8, width: "100%" }}>
-                FLAT SOFTWARE FEE — $30 any event · $75 majors · $330/year unlimited<br />
-                or every remaining 2026 event for $30 with the Season Pass
-              </p>
+              <div style={{ width: "100%", borderTop: "1px dotted var(--paper-line)", paddingTop: 26, marginTop: 8 }}>
+                <div className="mono" style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 20 }}>
+                  Flat software fee — entry fees never touch the platform
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
+                  {[["$30", "any event"], ["$75", "majors"], ["$330", "annual · unlimited"], ["$30", "2026 Season Pass"]].map(([p, l], i) => (
+                    <div key={l} style={{ padding: "2px 30px", borderLeft: i ? "1px dotted var(--paper-line)" : "none" }}>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 30, color: "#16130F", lineHeight: 1 }}>{p}</div>
+                      <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginTop: 8 }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <p className="pro-note" style={{ marginTop: 0 }}>
-                Every pool includes the odds-tiered picksheet, the live leaderboard, printable picksheets, and the
-                only match-play Presidents Cup pool on the market this September.
+                Every pool includes the odds-tiered picksheet, the live leaderboard, and printable picksheets
+                for the grill room.
               </p>
               <p className="set-sub" style={{ fontSize: 13, opacity: 0.8 }}>
                 Looking for your club's pool? Open the link your golf shop shared with you.
