@@ -133,6 +133,18 @@ exports.handler = async (event) => {
     return "pools admin insert/select/update policies in place";
   });
 
+  await step("pool format columns: scoring/cut/tiers/entries persist per pool", async () => {
+    /* the app scored best-4 and showed default copy for EVERY pool because the
+       chosen format only lived in the pro's browser session — never in the DB */
+    await sql(`
+      ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS scoring text;
+      ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS cut_rule text;
+      ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS tier_method text;
+      ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS max_entries text;
+    `);
+    return "pools.scoring / cut_rule / tier_method / max_entries columns ready";
+  });
+
   await step("pools diagnostic: latest rows (read-only)", async () => {
     const r = await sql("SELECT id, club_id, event_name, published, paid, plan, created_at FROM public.pools ORDER BY created_at DESC LIMIT 10;");
     return JSON.parse(r);

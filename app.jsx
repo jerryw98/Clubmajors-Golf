@@ -1415,11 +1415,13 @@ function fmtPar(n) {
   return n > 0 ? `+${n}` : `${n}`;
 }
 
-function scoreEntry(picks, scores) {
+function scoreEntry(picks, scores, scoring) {
+  /* scoring comes from the POOL's saved format — never assume best-4 */
+  const countN = scoring === "all6" ? 6 : 4;
   const detailed = picks.map((id) => ({ id, score: poolScore(id, scores) }));
   const sorted = [...detailed].sort((a, b) => a.score - b.score);
-  const counted = new Set(sorted.slice(0, 4).map((d) => d.id));
-  const total = sorted.slice(0, 4).reduce((sum, d) => sum + d.score, 0);
+  const counted = new Set(sorted.slice(0, countN).map((d) => d.id));
+  const total = sorted.slice(0, countN).reduce((sum, d) => sum + d.score, 0);
   return { total, counted };
 }
 
@@ -1607,6 +1609,12 @@ function ClubMajorsPrototype() {
             : prev.rules,
           payouts: pool.payouts || prev.payouts,
           tiebreakerOn: typeof pool.tiebreaker_on === "boolean" ? pool.tiebreaker_on : prev.tiebreakerOn,
+          /* the saved format drives scoring and every member-facing format
+             string — local defaults are only for pools that predate the columns */
+          scoring: pool.scoring || prev.scoring,
+          cutRule: pool.cut_rule || prev.cutRule,
+          tierMethod: pool.tier_method || prev.tierMethod,
+          maxEntries: pool.max_entries || prev.maxEntries,
         }));
       }
       if (club || pool) setEntries(entries || []); else if (entries && entries.length) setEntries(entries);
@@ -2016,7 +2024,7 @@ function ClubMajorsPrototype() {
     return 0;
   }
   const ranked = entries
-    .map((e) => ({ ...e, ...scoreEntry(e.picks, scores) }))
+    .map((e) => ({ ...e, ...scoreEntry(e.picks, scores, setup.scoring) }))
     .sort(cmpEntries)
     .map((e, i, arr) => ({
       ...e,
@@ -2658,7 +2666,7 @@ function ClubMajorsPrototype() {
                 ? "Picks are locked — the deadline has passed. See the pro shop if you need a change."
                 : editCode
                 ? "Update your six picks below. Your changes replace your current entry."
-                : "Select one golfer from each tier, add your name and tiebreaker, and submit. Six picks, best four count."}
+                : "Select one golfer from each tier, add your name" + (setup.tiebreakerOn ? " and tiebreaker" : "") + ", and submit. Six picks — " + (setup.scoring === "all6" ? "all six scores count" : "best four count") + "."}
             </p>
 
             {locked && (
@@ -2989,7 +2997,7 @@ function ClubMajorsPrototype() {
                 </div>
               )}
             <div className="board-foot">
-              Best 4 of 6 scores count · Missed cut scored at 36-hole total +8 per weekend round ·{" "}
+              {(setup.scoring === "all6" ? "All 6 scores count" : "Best 4 of 6 scores count")} · Missed cut scored at 36-hole total +8 per weekend round ·{" "}
               {source === "live"
                 ? `Live scoring via SlashGolf${lastUpdated ? " · updated " + new Date(lastUpdated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : ""}`
                 : source === "demo"
@@ -3129,9 +3137,9 @@ function ClubMajorsPrototype() {
                       <span className="field-k">Picksheet tiers</span>
                       <select className="club-name-input" value={setup.tierMethod} onChange={(e) => setSetup((s) => ({ ...s, tierMethod: e.target.value }))}>
                         <option value="odds6">6 tiers by Vegas odds · pick 1 each</option>
-                        <option value="owgr6">6 tiers by World Ranking · pick 1 each</option>
-                        <option value="open">No tiers · pick any 6</option>
-                        <option value="custom">Custom tiers (build your own)</option>
+                        <option value="owgr6" disabled>6 tiers by World Ranking · coming soon</option>
+                        <option value="open" disabled>No tiers · pick any 6 · coming soon</option>
+                        <option value="custom" disabled>Custom tiers · coming soon</option>
                       </select>
                     </label>
                     <label className="field">
@@ -3146,16 +3154,16 @@ function ClubMajorsPrototype() {
                       <select className="club-name-input" value={setup.scoring} onChange={(e) => setSetup((s) => ({ ...s, scoring: e.target.value }))}>
                         <option value="best4">To par · best 4 of 6 count</option>
                         <option value="all6">To par · all 6 count</option>
-                        <option value="daily">Daily bests (best scores each round)</option>
-                        <option value="money">Money earnings</option>
+                        <option value="daily" disabled>Daily bests · coming soon</option>
+                        <option value="money" disabled>Money earnings · coming soon</option>
                       </select>
                     </label>
                     <label className="field">
                       <span className="field-k">Missed cut handling</span>
                       <select className="club-name-input" value={setup.cutRule} onChange={(e) => setSetup((s) => ({ ...s, cutRule: e.target.value }))}>
                         <option value="plus8">36-hole total +8 per missed round</option>
-                        <option value="score80">Score of 80 for rounds 3 & 4</option>
-                        <option value="worst">Highest carded score from the field</option>
+                        <option value="score80" disabled>Score of 80 for rounds 3 & 4 · coming soon</option>
+                        <option value="worst" disabled>Highest carded score from the field · coming soon</option>
                       </select>
                     </label>
                   </div>
@@ -3366,6 +3374,10 @@ function ClubMajorsPrototype() {
                                 payouts: setup.payouts,
                                 plan: setup.billing,
                                 event_name: evName,
+                                scoring: setup.scoring,
+                                cut_rule: setup.cutRule,
+                                tier_method: setup.tierMethod,
+                                max_entries: String(setup.maxEntries),
                               })
                               .select()
                               .single();
@@ -3387,6 +3399,10 @@ function ClubMajorsPrototype() {
                               payouts: setup.payouts,
                               plan: setup.billing,
                               event_name: evName,
+                              scoring: setup.scoring,
+                              cut_rule: setup.cutRule,
+                              tier_method: setup.tierMethod,
+                              max_entries: String(setup.maxEntries),
                             };
                             const changingEvent = dbPool.event_name && dbPool.event_name !== evName && entries.length > 0;
                             if (changingEvent) {
