@@ -2522,10 +2522,10 @@ function ClubMajorsPrototype() {
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "26px 40px", marginTop: 44, borderTop: "1px dotted var(--paper-line)", paddingTop: 32 }}>
               {[
-                ["Scores you can trust", "We check every score against multiple independent data feeds, around the clock. If a feed goes stale or two sources disagree, we catch it before your members do."],
                 ["Made for private clubs", "Your crest, your colors, your rules, your payouts. Members see their club's pool. They never see ours."],
                 ["Set up in minutes", "Pick the event, set the entry fee, publish. The picksheet and leaderboard build themselves from the tournament field."],
                 ["Support that answers", "Email us and a person replies. Quickly, including tournament weekends."],
+                ["Scores you can trust", "We check every score against multiple independent data feeds, around the clock. If a feed goes stale or two sources disagree, we catch it before your members do."],
               ].map(([k, v]) => (
                 <div key={k}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
