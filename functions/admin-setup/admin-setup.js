@@ -230,14 +230,23 @@ exports.handler = async (event) => {
       CREATE OR REPLACE FUNCTION public.submit_entry(p_pool_id uuid, p_entry_name text, p_member_name text, p_picks jsonb)
        RETURNS TABLE(entry_id uuid, edit_token text) LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'extensions'
       AS $function$
-      declare v_token text; v_id uuid; v_deadline timestamptz; v_published boolean;
+      declare v_token text; v_id uuid; v_deadline timestamptz; v_published boolean; v_max text; v_count int;
       begin
-        select deadline, published into v_deadline, v_published from pools where id = p_pool_id;
+        select deadline, published, max_entries into v_deadline, v_published, v_max from pools where id = p_pool_id;
         if v_deadline is null then raise exception 'pool not found'; end if;
         if not v_published then raise exception 'pool not open'; end if;
         if now() >= v_deadline then raise exception 'picks are locked'; end if;
         if jsonb_typeof(p_picks) <> 'array' or jsonb_array_length(p_picks) < 6 or jsonb_array_length(p_picks) > 8 then
           raise exception 'need 6 picks (plus optional tiebreaker and team pick)'; end if;
+        /* per-member entry limit, matched on normalized member name */
+        if v_max is not null and v_max <> 'unlimited' and v_max ~ '^[0-9]+$' then
+          select count(*) into v_count from entries
+            where pool_id = p_pool_id
+              and lower(btrim(member_name)) = lower(btrim(coalesce(nullif(btrim(p_member_name),''),'Member')));
+          if v_count >= v_max::int then
+            raise exception 'Entry limit reached — this pool allows % entr% per member.', v_max::int, case when v_max::int = 1 then 'y' else 'ies' end;
+          end if;
+        end if;
         v_token := replace(gen_random_uuid()::text, '-', '');
         insert into entries (pool_id, entry_name, member_name, picks, edit_token)
         values (p_pool_id, coalesce(nullif(btrim(p_entry_name),''),'My Entry'),
@@ -250,14 +259,23 @@ exports.handler = async (event) => {
       CREATE OR REPLACE FUNCTION public.update_entry(p_edit_token text, p_entry_name text, p_member_name text, p_picks jsonb)
        RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'extensions'
       AS $function$
-      declare v_deadline timestamptz; v_id uuid;
+      declare v_deadline timestamptz; v_id uuid; v_pool uuid; v_max text; v_count int; v_newname text;
       begin
-        select e.id, p.deadline into v_id, v_deadline
+        select e.id, e.pool_id, p.deadline, p.max_entries into v_id, v_pool, v_deadline, v_max
         from entries e join pools p on p.id = e.pool_id where e.edit_token = p_edit_token;
         if v_id is null then raise exception 'entry not found or bad code'; end if;
         if now() >= v_deadline then raise exception 'picks are locked'; end if;
         if jsonb_typeof(p_picks) <> 'array' or jsonb_array_length(p_picks) < 6 or jsonb_array_length(p_picks) > 8 then
           raise exception 'need 6 picks (plus optional tiebreaker and team pick)'; end if;
+        /* renaming an entry must not dodge the per-member limit */
+        v_newname := nullif(btrim(p_member_name), '');
+        if v_newname is not null and v_max is not null and v_max <> 'unlimited' and v_max ~ '^[0-9]+$' then
+          select count(*) into v_count from entries
+            where pool_id = v_pool and id <> v_id and lower(btrim(member_name)) = lower(v_newname);
+          if v_count >= v_max::int then
+            raise exception 'Entry limit reached — this pool allows % entr% per member.', v_max::int, case when v_max::int = 1 then 'y' else 'ies' end;
+          end if;
+        end if;
         update entries set
           entry_name = coalesce(nullif(btrim(p_entry_name),''), entry_name),
           member_name = coalesce(nullif(btrim(p_member_name),''), member_name),
@@ -266,7 +284,7 @@ exports.handler = async (event) => {
         return true;
       end $function$;
     `);
-    return "submit_entry and update_entry accept 6-8 elements — tiebreaker + Presidents Cup team pick persist";
+    return "submit_entry and update_entry: 6-8 pick elements + per-member entry limit enforced from pools.max_entries (rename-dodge covered)";
   });
 
   await step("referral tracking columns + owner visibility on signups", async () => {
