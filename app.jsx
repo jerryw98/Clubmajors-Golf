@@ -666,6 +666,21 @@ function OwnerDashboard({ liveSource }) {
           }
         });
         mismatches.sort((a, b) => a.player.localeCompare(b.player));
+        /* full per-source table: every golfer, every feed's current value */
+        const tableRows = [];
+        names.forEach((k) => {
+          const cells = maps.map((m) => {
+            const pl = m.get(k);
+            if (!pl) return "—";
+            if (pl.cut === true) return "MC";
+            return pl.total == null ? "?" : fmtPar(pl.total);
+          });
+          const anyPl = maps.map((m) => m.get(k)).find(Boolean);
+          const label = anyPl ? ((anyPl.firstName || "") + " " + (anyPl.lastName || "")).trim() : k;
+          const disagree = new Set(cells.filter((c) => c !== "—" && c !== "?")).size > 1;
+          tableRows.push({ player: label, cells, disagree });
+        });
+        tableRows.sort((a, b) => (a.disagree === b.disagree ? a.player.localeCompare(b.player) : a.disagree ? -1 : 1));
         setValidation({
           summary:
             "Cross-checked " + feeds.map((f) => f.name).join(" vs ") + ": " + compared + " players compared, " +
@@ -673,6 +688,8 @@ function OwnerDashboard({ liveSource }) {
             ". Live leaderboard is currently on the " + srcLabel + " feed.",
           compared,
           mismatches,
+          feedNames: feeds.map((f) => f.name),
+          tableRows,
         });
       }
     } catch (e) {
@@ -834,6 +851,27 @@ function OwnerDashboard({ liveSource }) {
                   ))}
                   {(validation.mismatches || []).length === 0 && validation.compared > 0 && (
                     <p className="sheet-sub" style={{ color: "var(--pine)" }}>All {validation.compared} compared players match.</p>
+                  )}
+                  {(validation.tableRows || []).length > 0 && (
+                    <div style={{ marginTop: 16, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                      <div className="mono" style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 6 }}>
+                        Every golfer, every source — disagreements first
+                      </div>
+                      <div style={{ minWidth: 460 }}>
+                        <div className="mono" style={{ display: "grid", gridTemplateColumns: "2fr " + validation.feedNames.map(() => "1fr").join(" "), gap: 6, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", padding: "6px 0", borderBottom: "1px solid var(--paper-line)" }}>
+                          <span>Golfer</span>
+                          {validation.feedNames.map((n) => <span key={n}>{n}</span>)}
+                        </div>
+                        {validation.tableRows.map((r) => (
+                          <div key={r.player} style={{ display: "grid", gridTemplateColumns: "2fr " + validation.feedNames.map(() => "1fr").join(" "), gap: 6, padding: "5px 0", borderBottom: "1px dotted var(--paper-line)", fontSize: 12.5, background: r.disagree ? "rgba(179,64,47,0.07)" : "transparent" }}>
+                            <span>{r.player}</span>
+                            {r.cells.map((c, i) => (
+                              <span key={i} className="mono" style={{ color: r.disagree ? "var(--under)" : "var(--pine)" }}>{c}</span>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </>
               )}
@@ -2038,6 +2076,40 @@ function ClubMajorsPrototype() {
     return { ...e, posLabel: `${tied ? "T" : ""}${lastPos}` };
   });
 
+  async function openBillingPortal() {
+    try {
+      const { data } = await sb.auth.getSession();
+      const token = data && data.session && data.session.access_token;
+      if (!token) { alert("Sign in first."); return; }
+      const r = await fetch("/.netlify/functions/billing-portal", { headers: { Authorization: "Bearer " + token } });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "portal unavailable");
+      window.open(j.url, "_blank", "noopener");
+    } catch (e) {
+      alert("Could not open the billing portal: " + ((e && e.message) || e));
+    }
+  }
+
+  async function deleteMyEntry() {
+    if (!dbPool || !editCode) return;
+    if (!window.confirm("Delete your entry from this pool? This can't be undone.")) return;
+    try {
+      const { error } = await sb.rpc("delete_entry", { p_edit_token: editCode.token });
+      if (error) throw error;
+      clearEditCode(dbPool.id);
+      setEditCode(null);
+      setMyEntryId(null);
+      setPicks({});
+      setEntryName("");
+      setMemberName("");
+      setTiebreak("");
+      setEntries(await refetchEntries(dbPool.id));
+      setSaveMsg("Your entry was deleted. You can submit a fresh one any time before the deadline.");
+    } catch (e) {
+      alert("Could not delete your entry: " + ((e && e.message) || e));
+    }
+  }
+
   async function submitPicks() {
     if (pickCount < ACTIVE_TIERS.length || !tbValid || nameTaken || !agree || (teamMode && !cupCall)) return;
     const picksArr = ACTIVE_TIERS.map((t) => picks[t.label]);
@@ -2810,6 +2882,13 @@ function ClubMajorsPrototype() {
                 {editCode ? "Save changes" : "Submit picksheet"}
               </button>
             </div>
+            )}
+            {editCode && !locked && dbPool && (
+              <p style={{ marginTop: 10 }}>
+                <button className="btn-link" style={{ color: "var(--under)" }} onClick={deleteMyEntry}>
+                  Delete my entry
+                </button>
+              </p>
             )}
             {nameTaken && (
               <p className="sheet-sub" style={{ color: "#B3402F", marginTop: 8 }}>
@@ -3899,6 +3978,19 @@ function ClubMajorsPrototype() {
                         ? "Hit a snag setting up your club (" + selfServeErr + ") — retrying automatically…"
                         : "We couldn't finish setting up your club: " + selfServeErr + ". Please email support@clubmajorsgolf.com and we'll fix it right away."}
                     </p>
+                  )}
+                  {isAdminRole && dbClub && (
+                    <div style={{ marginTop: 18, borderTop: "1px dotted var(--paper-line)", paddingTop: 14 }}>
+                      <h3 className="set-title" style={{ fontSize: 14 }}>Billing</h3>
+                      <p className="set-sub">
+                        {passActive
+                          ? (dbClub.plan === "annual" ? "Annual Pass" : "2026 Season Pass") + " active" +
+                            (dbClub.paid_until ? " through " + new Date(dbClub.paid_until).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : "") +
+                            ". Cancel any time — your pass stays active through the end of the paid period."
+                          : "View invoices or manage your club's subscription."}
+                      </p>
+                      <button className="btn btn-ghost" onClick={openBillingPortal}>Manage subscription</button>
+                    </div>
                   )}
                   <div style={{ marginTop: 18, borderTop: "1px dotted var(--paper-line)", paddingTop: 14 }}>
                     <h3 className="set-title" style={{ fontSize: 14 }}>Change password</h3>

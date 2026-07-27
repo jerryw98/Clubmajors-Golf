@@ -25,7 +25,7 @@ const { execFileSync } = require("child_process");
 
 const ROOT = path.join(__dirname, "..");
 const API = "https://api.netlify.com/api/v1";
-const FUNCTIONS = ["leaderboard", "pga-validate", "admin-setup", "stripe-webhook", "validate-cron", "backup-cron"];
+const FUNCTIONS = ["leaderboard", "pga-validate", "admin-setup", "stripe-webhook", "validate-cron", "backup-cron", "billing-portal"];
 const SITE_URL = "https://clubmajorsgolf.com";
 
 /* ---------- tiny helpers ---------- */
@@ -114,6 +114,7 @@ function makeZip(name, data) {
     PLINK_MAJOR: env.PLINK_MAJOR, PLINK_EVENT: env.PLINK_EVENT,
     PLINK_ANNUAL: env.PLINK_ANNUAL, PLINK_SEASON: env.PLINK_SEASON,
     SETUP_KEY: env.SETUP_KEY,
+    STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY,
   };
   const existing = new Set((await (await api(env, `/accounts/${slug}/env?site_id=${SITE}`)).json()).map((v) => v.key));
   for (const [key, value] of Object.entries(wanted)) {

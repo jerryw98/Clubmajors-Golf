@@ -284,7 +284,21 @@ exports.handler = async (event) => {
         return true;
       end $function$;
     `);
-    return "submit_entry and update_entry: 6-8 pick elements + per-member entry limit enforced from pools.max_entries (rename-dodge covered)";
+    await sql(`
+      CREATE OR REPLACE FUNCTION public.delete_entry(p_edit_token text)
+       RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'extensions'
+      AS $function$
+      declare v_id uuid; v_deadline timestamptz;
+      begin
+        select e.id, p.deadline into v_id, v_deadline
+        from entries e join pools p on p.id = e.pool_id where e.edit_token = p_edit_token;
+        if v_id is null then raise exception 'entry not found or bad code'; end if;
+        if now() >= v_deadline then raise exception 'picks are locked — see the pro shop to remove an entry'; end if;
+        delete from entries where id = v_id;
+        return true;
+      end $function$;
+    `);
+    return "submit_entry/update_entry: 6-8 pick elements + per-member limit from pools.max_entries; delete_entry (token-gated, pre-deadline) ready";
   });
 
   await step("referral tracking columns + owner visibility on signups", async () => {

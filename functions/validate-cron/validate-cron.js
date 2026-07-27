@@ -145,13 +145,57 @@ exports.handler = async (event) => {
       return respond(200, { ok: true, skipped: "only " + feeds.length + " feed(s) live — nothing to cross-check", feedProblems });
     }
 
-    const maps = feeds.map((f) => { const m = new Map(); f.players.forEach((pl) => m.set(normName((pl.firstName || "") + " " + (pl.lastName || "")), pl)); return m; });
+    /* --- sync guards (Jul 2026): never cross-check feeds that aren't on the
+       same tournament/round. Observed failure modes, both false-alarm storms:
+       1) a feed resets to all-E / no-cuts when it rolls to next week's event
+          while others are still finishing this week's;
+       2) two feeds disagree on a third of the field around a transition.
+       Real data errors are per-player. Systemic disagreement means the feeds
+       are out of sync — skip them and say so, never email 53 "mismatches". */
+    const dropped = [];
+    const preTournament = (f) => {
+      const tot = f.players.length;
+      if (!tot) return true;
+      const zeroActive = f.players.filter((p) => (p.total === 0 || p.total == null) && p.cut !== true).length;
+      return zeroActive >= tot * 0.9;
+    };
+    let checked = feeds.filter((f) => {
+      if (preTournament(f)) { dropped.push(f.name + ": no live scores (board reset — likely rolled to the next event)"); return false; }
+      return true;
+    });
+    if (checked.length >= 2) {
+      const base = checked[0];
+      const baseMap = new Map();
+      base.players.forEach((pl) => baseMap.set(normName((pl.firstName || "") + " " + (pl.lastName || "")), pl));
+      checked = [base].concat(checked.slice(1).filter((f) => {
+        let both = 0, off = 0;
+        f.players.forEach((pl) => {
+          const b = baseMap.get(normName((pl.firstName || "") + " " + (pl.lastName || "")));
+          if (!b) return;
+          const cutDisagree = (pl.cut === true && b.cut === false) || (pl.cut === false && b.cut === true);
+          const numsOk = typeof pl.total === "number" && typeof b.total === "number" && Math.abs(pl.total) <= 30 && Math.abs(b.total) <= 30;
+          if (!cutDisagree && !numsOk) return;
+          both++;
+          if (cutDisagree || (numsOk && Math.abs(pl.total - b.total) >= 3)) off++;
+        });
+        if (both >= 10 && off / both > 0.3) {
+          dropped.push(f.name + ": out of sync with " + base.name + " (" + off + "/" + both + " players disagree — different event or round state)");
+          return false;
+        }
+        return true;
+      }));
+    }
+    if (checked.length < 2) {
+      return respond(200, { ok: true, skipped: "feeds not in sync — nothing safely comparable", dropped, feedProblems });
+    }
+
+    const maps = checked.map((f) => { const m = new Map(); f.players.forEach((pl) => m.set(normName((pl.firstName || "") + " " + (pl.lastName || "")), pl)); return m; });
     const names = new Set();
     maps.forEach((m) => m.forEach((_, k) => names.add(k)));
     const mismatches = [];
     let compared = 0;
     names.forEach((k) => {
-      const present = maps.map((m, i) => ({ feed: feeds[i].name, pl: m.get(k) })).filter((x) => x.pl);
+      const present = maps.map((m, i) => ({ feed: checked[i].name, pl: m.get(k) })).filter((x) => x.pl);
       if (present.length < 2) return;
       compared++;
       const player = ((present[0].pl.firstName || "") + " " + (present[0].pl.lastName || "")).trim();
@@ -214,10 +258,10 @@ exports.handler = async (event) => {
     const fingerprint = mismatches.slice().sort().join("|").slice(0, 900);
     let emailInfo = { sent: false, reason: "no mismatches" };
     if (mismatches.length > 0) {
-      const body = "ClubMajors score validation found " + mismatches.length + " mismatch(es) across " + feeds.map((f) => f.name).join(" vs ") + " (" + compared + " players compared):\n\n" + mismatches.slice(0, 20).join("\n") + (mismatches.length > 20 ? "\n…and " + (mismatches.length - 20) + " more" : "") + "\n\nReview: " + SITE_URL + "/owner (Data Health tab)";
+      const body = "ClubMajors score validation found " + mismatches.length + " mismatch(es) across " + checked.map((f) => f.name).join(" vs ") + " (" + compared + " players compared):\n\n" + mismatches.slice(0, 20).join("\n") + (mismatches.length > 20 ? "\n…and " + (mismatches.length - 20) + " more" : "") + "\n\nReview: " + SITE_URL + "/owner (Data Health tab)";
       emailInfo = await alertEmail("ClubMajors: " + mismatches.length + " score mismatch(es)", body, fingerprint, mismatches.length);
     }
-    return respond(200, { ok: true, feeds: feeds.map((f) => f.name), compared, mismatches: mismatches.length, sample: mismatches.slice(0, 5), email: emailInfo });
+    return respond(200, { ok: true, feeds: checked.map((f) => f.name), dropped, compared, mismatches: mismatches.length, sample: mismatches.slice(0, 5), email: emailInfo });
   } catch (e) {
     return respond(500, { error: String((e && e.message) || e).slice(0, 300) });
   }
