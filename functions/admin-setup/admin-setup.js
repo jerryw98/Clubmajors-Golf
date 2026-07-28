@@ -141,6 +141,7 @@ exports.handler = async (event) => {
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS cut_rule text;
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS tier_method text;
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS max_entries text;
+      ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS member_edits boolean;
     `);
     return "pools.scoring / cut_rule / tier_method / max_entries columns ready";
   });
@@ -259,11 +260,12 @@ exports.handler = async (event) => {
       CREATE OR REPLACE FUNCTION public.update_entry(p_edit_token text, p_entry_name text, p_member_name text, p_picks jsonb)
        RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'extensions'
       AS $function$
-      declare v_deadline timestamptz; v_id uuid; v_pool uuid; v_max text; v_count int; v_newname text;
+      declare v_deadline timestamptz; v_id uuid; v_pool uuid; v_max text; v_count int; v_newname text; v_editable boolean;
       begin
-        select e.id, e.pool_id, p.deadline, p.max_entries into v_id, v_pool, v_deadline, v_max
+        select e.id, e.pool_id, p.deadline, p.max_entries, p.member_edits into v_id, v_pool, v_deadline, v_max, v_editable
         from entries e join pools p on p.id = e.pool_id where e.edit_token = p_edit_token;
         if v_id is null then raise exception 'entry not found or bad code'; end if;
+        if v_editable = false then raise exception 'entries in this pool are final once submitted — see the pro shop for changes'; end if;
         if now() >= v_deadline then raise exception 'picks are locked'; end if;
         if jsonb_typeof(p_picks) <> 'array' or jsonb_array_length(p_picks) < 6 or jsonb_array_length(p_picks) > 8 then
           raise exception 'need 6 picks (plus optional tiebreaker and team pick)'; end if;
@@ -288,11 +290,12 @@ exports.handler = async (event) => {
       CREATE OR REPLACE FUNCTION public.delete_entry(p_edit_token text)
        RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'extensions'
       AS $function$
-      declare v_id uuid; v_deadline timestamptz;
+      declare v_id uuid; v_deadline timestamptz; v_editable boolean;
       begin
-        select e.id, p.deadline into v_id, v_deadline
+        select e.id, p.deadline, p.member_edits into v_id, v_deadline, v_editable
         from entries e join pools p on p.id = e.pool_id where e.edit_token = p_edit_token;
         if v_id is null then raise exception 'entry not found or bad code'; end if;
+        if v_editable = false then raise exception 'entries in this pool are final once submitted — see the pro shop for changes'; end if;
         if now() >= v_deadline then raise exception 'picks are locked — see the pro shop to remove an entry'; end if;
         delete from entries where id = v_id;
         return true;

@@ -1428,12 +1428,13 @@ function generateRules(s) {
       ? "Money list — your six golfers' combined official earnings; highest total Sunday wins."
       : "Best four count — your four lowest 72-hole scores to par make your total. Lowest total Sunday wins."
   );
+  const swapTail = s.memberEdits === false ? " (withdrawals too — entries are final once submitted)." : " (withdrawals too — same-tier swaps OK before the deadline).";
   lines.push(
     s.cutRule === "score80"
-      ? "Missed cuts are scored 80 for each weekend round (withdrawals too — same-tier swaps OK before the deadline)."
+      ? "Missed cuts are scored 80 for each weekend round" + swapTail
       : s.cutRule === "worst"
-      ? "Missed cuts take the field's highest carded round for rounds 3 & 4 (withdrawals too — same-tier swaps OK before the deadline)."
-      : "Missed cuts score their 36-hole total +8 per weekend round (withdrawals too — same-tier swaps OK before the deadline)."
+      ? "Missed cuts take the field's highest carded round for rounds 3 & 4" + swapTail
+      : "Missed cuts score their 36-hole total +8 per weekend round" + swapTail
   );
   if (s.tiebreakerOn) lines.push("Tiebreaker — closest guess at the winning score, then a scorecard playoff of best pick vs. best pick. Golf shop has final say.");
   lines.push(s.maxEntries === "unlimited" ? "Entries — no limit per member." : "Entries — up to " + s.maxEntries + " per member.");
@@ -1653,6 +1654,7 @@ function ClubMajorsPrototype() {
           cutRule: pool.cut_rule || prev.cutRule,
           tierMethod: pool.tier_method || prev.tierMethod,
           maxEntries: pool.max_entries || prev.maxEntries,
+          memberEdits: typeof pool.member_edits === "boolean" ? pool.member_edits : prev.memberEdits,
         }));
       }
       if (club || pool) setEntries(entries || []); else if (entries && entries.length) setEntries(entries);
@@ -1848,6 +1850,7 @@ function ClubMajorsPrototype() {
   /* prefill picks + names from an edit code (works cross-device) */
   async function beginEditByCode(token) {
     if (!token) return;
+    if (!memberEditsAllowed) { setSaveMsg("Entries in this pool are final once submitted — see the pro shop for changes."); return; }
     try {
       const row = await lookupByCode(token.trim());
       if (!row) { setSaveMsg("That code doesn't match any entry."); return; }
@@ -1909,6 +1912,7 @@ function ClubMajorsPrototype() {
     tiebreakerOn: true,
     cutRule: "plus8",
     maxEntries: "2",
+    memberEdits: true, /* members may edit/delete their entry until the deadline */
     adminFeeOn: false,
     adminFeeType: "flat",
     adminFeeVal: 100,
@@ -1927,6 +1931,8 @@ function ClubMajorsPrototype() {
   /* Anonymous visitor, no club link → the ClubMajors front door (the buyer's
      page), not a club shell. Invite links keep their sign-in flow. */
   const platformLanding = !DEMO && !INVITE && !session && !dbClub;
+  /* pro-configured: when a pool marks entries final, members get no edit/delete affordances */
+  const memberEditsAllowed = DEMO || !dbPool || dbPool.member_edits !== false;
   const NAV_TABS = platformLanding
     ? [{ id: "landing", label: "Overview", roles: ["guest"] }, { id: "signin", label: "Club Admin", roles: ["guest"] }]
     : !DEMO && !hasPublishedPool
@@ -1952,7 +1958,7 @@ function ClubMajorsPrototype() {
     if (rulesTouchedRef.current) return;
     setSetup((s) => ({ ...s, rules: generateRules(s).map((l) => "\u2022 " + l).join("\n") }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setup.tierMethod, setup.scoring, setup.cutRule, setup.tiebreakerOn, setup.maxEntries, setup.eventId]);
+  }, [setup.tierMethod, setup.scoring, setup.cutRule, setup.tiebreakerOn, setup.maxEntries, setup.memberEdits, setup.eventId]);
 
   /* the saved event can age out of the dropdown (auto-hidden after it ends);
      roll forward to the next event and suggest its deadline — never keep a
@@ -2372,6 +2378,10 @@ function ClubMajorsPrototype() {
         .board-foot { padding: 10px 18px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.06em; color: rgba(247,242,228,0.45); line-height: 1.7; }
 
         /* ---------- footer ---------- */
+        .landing-h1 { margin: 0; font-family: 'Archivo Black', sans-serif; font-size: 42px; line-height: 1.08; letter-spacing: -0.03em; color: #16130F; }
+        .rate-item { padding: 2px 30px; }
+        .rate-item.first { padding-left: 0; }
+        .rate-price { font-family: 'Archivo Black', sans-serif; font-size: 30px; color: #16130F; line-height: 1; }
         .btn-link { background: none; border: none; cursor: pointer; color: var(--pine); font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; padding: 10px 4px; }
         .btn-link:hover { color: var(--under); }
         .powered { margin-top: 140px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
@@ -2490,6 +2500,14 @@ function ClubMajorsPrototype() {
           .color-row { flex-wrap: wrap; }
           .color-label { flex: 1 1 100%; margin-top: 2px; }
 
+          /* platform landing + masthead on phones */
+          .landing-h1 { font-size: 29px; }
+          .club-name { font-size: 20px; }
+          .club-sub { font-size: 11px; }
+          .rate-item { padding: 8px 24px 8px 0; border-left: none !important; flex: 1 1 45%; }
+          .rate-price { font-size: 24px; }
+          .sheet-head { flex-wrap: wrap; gap: 4px; }
+
           /* scoreboard: tighter grid, no overflow */
           .board-cols, .row-main { grid-template-columns: 40px 1fr 64px 20px; padding-left: 12px; padding-right: 12px; }
           .row-entry { font-size: 14.5px; }
@@ -2568,7 +2586,7 @@ function ClubMajorsPrototype() {
                 <div className="mono" style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--under)", marginBottom: 14 }}>
                   Golf tournament pools · Private clubs
                 </div>
-                <h1 style={{ margin: 0, fontFamily: "'Archivo Black', sans-serif", fontSize: 40, lineHeight: 1.08, letterSpacing: "-0.03em", color: "#16130F" }}>
+                <h1 className="landing-h1">
                   Major-championship pools for your club
                 </h1>
                 <p className="set-sub" style={{ fontSize: 16.5, margin: "18px 0 24px" }}>
@@ -2627,8 +2645,8 @@ function ClubMajorsPrototype() {
               </div>
               <div style={{ display: "flex", flexWrap: "wrap" }}>
                 {[["$30", "2026 Season Pass"], ["$75", "majors"], ["$30", "non-major events"], ["$330", "annual pass · 2027 onward"]].map(([p, l], i) => (
-                  <div key={l} style={{ padding: i ? "2px 30px" : "2px 30px 2px 0", borderLeft: i ? "1px dotted var(--paper-line)" : "none" }}>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 30, color: "#16130F", lineHeight: 1 }}>{p}</div>
+                  <div key={l} className={"rate-item" + (i ? "" : " first")} style={{ borderLeft: i ? "1px dotted var(--paper-line)" : "none" }}>
+                    <div className="rate-price">{p}</div>
                     <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginTop: 8 }}>{l}</div>
                   </div>
                 ))}
@@ -2747,11 +2765,11 @@ function ClubMajorsPrototype() {
               </p>
             )}
 
-            {!editCode && !locked && (
+            {!editCode && !locked && memberEditsAllowed && (
               <p className="sheet-sub" style={{ marginTop: -12, marginBottom: 18 }}>
                 Already entered on another device? Paste your edit code:{" "}
                 <input
-                  className="club-name-input" style={{ display: "inline-block", width: 200, padding: "6px 10px", marginLeft: 6, verticalAlign: "middle" }}
+                  className="club-name-input" style={{ display: "inline-block", width: 200, maxWidth: "100%", padding: "6px 10px", marginLeft: 6, verticalAlign: "middle" }}
                   placeholder="edit code"
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value)}
@@ -2780,7 +2798,7 @@ function ClubMajorsPrototype() {
               <p className="sheet-sub" style={{ marginTop: -6, marginBottom: 18 }}>
                 <input
                   className="club-name-input"
-                  style={{ display: "inline-block", width: 240, padding: "6px 10px", verticalAlign: "middle" }}
+                  style={{ display: "inline-block", width: 240, maxWidth: "100%", padding: "6px 10px", verticalAlign: "middle" }}
                   placeholder="Search golfers by name…"
                   value={golferQuery}
                   onChange={(e) => setGolferQuery(e.target.value)}
@@ -2883,7 +2901,7 @@ function ClubMajorsPrototype() {
               </button>
             </div>
             )}
-            {editCode && !locked && dbPool && (
+            {editCode && !locked && dbPool && memberEditsAllowed && (
               <p style={{ marginTop: 10 }}>
                 <button className="btn-link" style={{ color: "var(--under)" }} onClick={deleteMyEntry}>
                   Delete my entry
@@ -2914,7 +2932,7 @@ function ClubMajorsPrototype() {
         {/* ============ LEADERBOARD ============ */}
         {view === "board" && !guestNoPool && (
           <>
-          {showCode && (
+          {showCode && memberEditsAllowed && (
             <div className="champ-banner" style={{ borderTopColor: "var(--brass)", marginBottom: 18, textAlign: "left", padding: "16px 18px" }}>
               <div className="champ-eyebrow">Entry submitted — save your edit code</div>
               <p className="set-sub" style={{ margin: "8px 0 6px" }}>
@@ -2924,7 +2942,7 @@ function ClubMajorsPrototype() {
               <button className="remove-link" style={{ color: "var(--muted)", marginTop: 6 }} onClick={() => setShowCode(null)}>Dismiss</button>
             </div>
           )}
-          {editCode && !locked && !showCode && (
+          {editCode && !locked && !showCode && memberEditsAllowed && (
             <div className="cta-row" style={{ marginBottom: 14 }}>
               <button className="btn btn-ghost btn-small" onClick={() => beginEditByCode(editCode.token)}>Edit my picks</button>
             </div>
@@ -3199,6 +3217,22 @@ function ClubMajorsPrototype() {
                         {setup.maxEntries === "unlimited" ? "Unlimited entries per member" : `Up to ${setup.maxEntries} ${setup.maxEntries === "1" ? "entry" : "entries"} per member`}
                       </span>
                     </div>
+                    <div className="field">
+                      <span className="field-k">Member changes</span>
+                      <div className="seg" role="radiogroup" aria-label="Member changes before the deadline">
+                        <button className={`seg-btn ${setup.memberEdits ? "on" : ""}`} onClick={() => setSetup((s) => ({ ...s, memberEdits: true }))} aria-pressed={!!setup.memberEdits}>
+                          Editable
+                        </button>
+                        <button className={`seg-btn ${!setup.memberEdits ? "on" : ""}`} onClick={() => setSetup((s) => ({ ...s, memberEdits: false }))} aria-pressed={!setup.memberEdits}>
+                          Final
+                        </button>
+                      </div>
+                      <span className="seg-hint">
+                        {setup.memberEdits
+                          ? "Members can edit or delete their entry until the deadline"
+                          : "Entries are final once submitted — only the golf shop can change them"}
+                      </span>
+                    </div>
                   </div>
                 </section>
 
@@ -3457,6 +3491,7 @@ function ClubMajorsPrototype() {
                                 cut_rule: setup.cutRule,
                                 tier_method: setup.tierMethod,
                                 max_entries: String(setup.maxEntries),
+                                member_edits: !!setup.memberEdits,
                               })
                               .select()
                               .single();
@@ -3482,6 +3517,7 @@ function ClubMajorsPrototype() {
                               cut_rule: setup.cutRule,
                               tier_method: setup.tierMethod,
                               max_entries: String(setup.maxEntries),
+                              member_edits: !!setup.memberEdits,
                             };
                             const changingEvent = dbPool.event_name && dbPool.event_name !== evName && entries.length > 0;
                             if (changingEvent) {
