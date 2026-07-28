@@ -311,7 +311,7 @@ exports.handler = async (event) => {
         select e.id, e.pool_id, p.deadline, p.max_entries, p.member_edits into v_id, v_pool, v_deadline, v_max, v_editable
         from entries e join pools p on p.id = e.pool_id where e.edit_token = p_edit_token;
         if v_id is null then raise exception 'entry not found or bad code'; end if;
-        if v_editable = false then raise exception 'entries in this pool are final once submitted — see the pro shop for changes'; end if;
+        raise exception 'entries are final once submitted';
         if now() >= v_deadline then raise exception 'picks are locked'; end if;
         if jsonb_typeof(p_picks) <> 'array' or jsonb_array_length(p_picks) < 6 or jsonb_array_length(p_picks) > 8 then
           raise exception 'need 6 picks (plus optional tiebreaker and team pick)'; end if;
@@ -341,8 +341,8 @@ exports.handler = async (event) => {
         select e.id, p.deadline, p.member_edits into v_id, v_deadline, v_editable
         from entries e join pools p on p.id = e.pool_id where e.edit_token = p_edit_token;
         if v_id is null then raise exception 'entry not found or bad code'; end if;
-        if v_editable = false then raise exception 'entries in this pool are final once submitted — see the pro shop for changes'; end if;
-        if now() >= v_deadline then raise exception 'picks are locked — see the pro shop to remove an entry'; end if;
+        raise exception 'entries are final once submitted';
+        if now() >= v_deadline then raise exception 'picks are locked'; end if;
         delete from entries where id = v_id;
         return true;
       end $function$;

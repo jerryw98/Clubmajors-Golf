@@ -1409,6 +1409,7 @@ function generateRules(s) {
     ];
     if (s.tiebreakerOn) lines.push("Tiebreaker — closest guess at the final Cup score (e.g., 17\u201313). Golf shop has final say.");
     lines.push(s.maxEntries === "unlimited" ? "Entries — no limit per member." : "Entries — up to " + s.maxEntries + " per member.");
+  lines.push("All entries are final once submitted — pick carefully.");
     return lines;
   }
   const lines = [];
@@ -1428,7 +1429,7 @@ function generateRules(s) {
       ? "Money list — your six golfers' combined official earnings; highest total Sunday wins."
       : "Best four count — your four lowest 72-hole scores to par make your total. Lowest total Sunday wins."
   );
-  const swapTail = s.memberEdits === false ? " (withdrawals too — entries are final once submitted)." : " (withdrawals too — same-tier swaps OK before the deadline).";
+  const swapTail = " (withdrawals too).";
   lines.push(
     s.cutRule === "score80"
       ? "Missed cuts are scored 80 for each weekend round" + swapTail
@@ -1438,6 +1439,7 @@ function generateRules(s) {
   );
   if (s.tiebreakerOn) lines.push("Tiebreaker — closest guess at the winning score, then a scorecard playoff of best pick vs. best pick. Golf shop has final say.");
   lines.push(s.maxEntries === "unlimited" ? "Entries — no limit per member." : "Entries — up to " + s.maxEntries + " per member.");
+  lines.push("All entries are final once submitted — pick carefully.");
   return lines;
 }
 
@@ -1931,8 +1933,10 @@ function ClubMajorsPrototype() {
   /* Anonymous visitor, no club link → the ClubMajors front door (the buyer's
      page), not a club shell. Invite links keep their sign-in flow. */
   const platformLanding = !DEMO && !INVITE && !session && !dbClub;
-  /* pro-configured: when a pool marks entries final, members get no edit/delete affordances */
-  const memberEditsAllowed = DEMO || !dbPool || dbPool.member_edits !== false;
+  /* Jul 2026: member editing DISABLED product-wide — entries are final once
+     submitted. To resurrect the feature, restore:
+     DEMO || !dbPool || dbPool.member_edits !== false */
+  const memberEditsAllowed = false;
   const NAV_TABS = platformLanding
     ? [{ id: "landing", label: "Overview", roles: ["guest"] }, { id: "signin", label: "Club Admin", roles: ["guest"] }]
     : !DEMO && !hasPublishedPool
@@ -2067,8 +2071,17 @@ function ClubMajorsPrototype() {
     for (let i = 0; i < Math.min(sa.length, sb.length); i++) if (sa[i] !== sb[i]) return sa[i] - sb[i];
     return 0;
   }
+  /* Blank board, never the 99-stroke missing-pick penalty (the "+396" bug),
+     when scoring hasn't genuinely begun for THIS pool: either no feed has any
+     live numbers yet, or the feed is still on a different event and doesn't
+     cover the players these entries actually picked. */
+  const anyLiveScores = Object.values(scores).some((s) => s && (s.mc || (s.thru || 0) > 0 || (s.total != null && s.total !== 0)));
+  const pickedIds = entries.flatMap((e) => e.picks || []);
+  const coveredPicks = pickedIds.filter((id) => scores[id]).length;
+  const feedCoversPool = pickedIds.length === 0 || coveredPicks / pickedIds.length >= 0.3;
+  const preTee = !DEMO && (!anyLiveScores || !feedCoversPool);
   const ranked = entries
-    .map((e) => ({ ...e, ...scoreEntry(e.picks, scores, setup.scoring) }))
+    .map((e) => ({ ...e, ...(preTee ? { total: 0, counted: new Set(e.picks) } : scoreEntry(e.picks, scores, setup.scoring)) }))
     .sort(cmpEntries)
     .map((e, i, arr) => ({
       ...e,
@@ -2118,6 +2131,7 @@ function ClubMajorsPrototype() {
 
   async function submitPicks() {
     if (pickCount < ACTIVE_TIERS.length || !tbValid || nameTaken || !agree || (teamMode && !cupCall)) return;
+    if (!editCode && !window.confirm("Entries are final once submitted — picks can't be changed or deleted afterward. Submit now?")) return;
     const picksArr = ACTIVE_TIERS.map((t) => picks[t.label]);
     if (teamMode) {
       picksArr.push("team:" + cupCall);
@@ -2755,7 +2769,7 @@ function ClubMajorsPrototype() {
             </div>
             <p className="sheet-sub">
               {locked
-                ? "Picks are locked — the deadline has passed. See the pro shop if you need a change."
+                ? "Picks are locked — the deadline has passed."
                 : editCode
                 ? "Update your six picks below. Your changes replace your current entry."
                 : "Select one golfer from each tier, add your name" + (setup.tiebreakerOn ? " and tiebreaker" : "") + ", and submit. Six picks — " + (setup.scoring === "all6" ? "all six scores count" : "best four count") + "."}
@@ -2934,13 +2948,12 @@ function ClubMajorsPrototype() {
         {/* ============ LEADERBOARD ============ */}
         {view === "board" && !guestNoPool && (
           <>
-          {showCode && memberEditsAllowed && (
+          {showCode && (
             <div className="champ-banner" style={{ borderTopColor: "var(--brass)", marginBottom: 18, textAlign: "left", padding: "16px 18px" }}>
-              <div className="champ-eyebrow">Entry submitted — save your edit code</div>
+              <div className="champ-eyebrow">Entry submitted</div>
               <p className="set-sub" style={{ margin: "8px 0 6px" }}>
-                Use this code to change your picks from any device until the deadline. We've also saved it on this device.
+                You're on the board — good luck. Entries are final; standings update live below once play begins.
               </p>
-              <div className="mono" style={{ fontSize: 18, color: "var(--pine)", letterSpacing: "0.08em", userSelect: "all" }}>{showCode}</div>
               <button className="remove-link" style={{ color: "var(--muted)", marginTop: 6 }} onClick={() => setShowCode(null)}>Dismiss</button>
             </div>
           )}
@@ -2962,7 +2975,9 @@ function ClubMajorsPrototype() {
                 <span className="live-chip">
                   <span className={`live-dot ${live ? "on" : ""}`} />
                   {live
-                    ? source === "live"
+                    ? preTee && source !== "demo"
+                      ? "PRE-TOURNAMENT"
+                      : source === "live"
                       ? staleAt
                         ? "SCORES AS OF " + new Date(staleAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
                         : "LIVE"
@@ -3001,7 +3016,7 @@ function ClubMajorsPrototype() {
                       {e.entry}
                       <span className="row-member">{e.member}</span>
                     </span>
-                    <span className={`row-total ${!teamMode && e.total < 0 ? "under" : ""}`}>{teamMode ? "—" : fmtPar(e.total)}</span>
+                    <span className={`row-total ${!teamMode && e.total < 0 ? "under" : ""}`}>{teamMode || preTee ? "—" : fmtPar(e.total)}</span>
                     <span className="chev">{isOpen ? "▲" : "▼"}</span>
                   </button>
                   {isOpen && (
@@ -3019,7 +3034,7 @@ function ClubMajorsPrototype() {
                               {lastMover === pid && live && <span className="drop-tag" style={{ color: "var(--brass-bright)", marginLeft: 8 }}>● MOVED</span>}
                             </span>
                             <span className={`pl-score ${val < 0 ? "under" : ""}`}>
-                              {s.total == null ? "—" : s.mc ? fmtPar(val) : fmtPar(s.total)}
+                              {preTee ? "" : s.total == null ? "—" : s.mc ? fmtPar(val) : fmtPar(s.total)}
                               {s.rounds && s.rounds.length > 0 && (
                                 <span className="mono" style={{ display: "block", fontSize: 10, opacity: 0.65, letterSpacing: "0.04em", fontWeight: 400, marginTop: 1, whiteSpace: "nowrap" }}>
                                   {coursePar
@@ -3031,7 +3046,7 @@ function ClubMajorsPrototype() {
                                 </span>
                               )}
                             </span>
-                            <span className="pl-thru">{s.mc ? "MC" : s.thru >= 18 ? "F" : `THRU ${s.thru}`}{!counted && " · DROP"}</span>
+                            <span className="pl-thru">{preTee ? "" : (s.mc ? "MC" : s.thru >= 18 ? "F" : `THRU ${s.thru}`) + (!counted ? " · DROP" : "")}</span>
                           </div>
                         );
                       })}
@@ -3059,32 +3074,8 @@ function ClubMajorsPrototype() {
                           <span className="pl-thru" />
                         </div>
                       )}
-                      {(role === "owner" || role === "pro") && dbPool && (
-                        <div className="pick-line">
-                          <span className="pl-tier" />
-                          <span>
-                            <button
-                              className="remove-link"
-                              style={{ color: "var(--muted)" }}
-                              onClick={async () => {
-                                if (!window.confirm('Remove entry "' + e.entry + '" permanently? This cannot be undone.')) return;
-                                try {
-                                  const { error } = await sb.from("entries").delete().eq("id", e.id);
-                                  if (error) throw error;
-                                  setEntries(await refetchEntries(dbPool.id));
-                                } catch (err) {
-                                  alert("Could not remove entry: " + ((err && err.message) || err));
-                                }
-                              }}
-                            >
-                              Remove entry · admin only
-                            </button>
-                          </span>
-                          <span className="pl-score" />
-                          <span className="pl-thru" />
-                        </div>
-                      )}
-                    </div>
+                      {/* admin remove-entry removed Jul 2026 — entries are final for everyone */}
+                                          </div>
                   )}
                 </div>
               );
@@ -3219,22 +3210,7 @@ function ClubMajorsPrototype() {
                         {setup.maxEntries === "unlimited" ? "Unlimited entries per member" : `Up to ${setup.maxEntries} ${setup.maxEntries === "1" ? "entry" : "entries"} per member`}
                       </span>
                     </div>
-                    <div className="field">
-                      <span className="field-k">Member changes</span>
-                      <div className="seg" role="radiogroup" aria-label="Member changes before the deadline">
-                        <button className={`seg-btn ${setup.memberEdits ? "on" : ""}`} onClick={() => setSetup((s) => ({ ...s, memberEdits: true }))} aria-pressed={!!setup.memberEdits}>
-                          Editable
-                        </button>
-                        <button className={`seg-btn ${!setup.memberEdits ? "on" : ""}`} onClick={() => setSetup((s) => ({ ...s, memberEdits: false }))} aria-pressed={!setup.memberEdits}>
-                          Final
-                        </button>
-                      </div>
-                      <span className="seg-hint">
-                        {setup.memberEdits
-                          ? "Members can edit or delete their entry until the deadline"
-                          : "Entries are final once submitted — only the golf shop can change them"}
-                      </span>
-                    </div>
+{/* Member-changes toggle removed Jul 2026 — all entries are final */}
                   </div>
                 </section>
 
