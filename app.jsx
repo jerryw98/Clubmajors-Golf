@@ -2502,6 +2502,8 @@ function ClubMajorsPrototype() {
 
           /* platform landing + masthead on phones */
           .landing-h1 { font-size: 29px; }
+          .board-mock { flex: 1 1 100% !important; min-width: 0 !important; }
+          .board-mock > div { transform: none !important; }
           .club-name { font-size: 20px; }
           .club-sub { font-size: 11px; }
           .rate-item { padding: 8px 24px 8px 0; border-left: none !important; flex: 1 1 45%; }
@@ -2599,7 +2601,7 @@ function ClubMajorsPrototype() {
                   <button className="btn btn-ghost" onClick={() => setView("signup")}>Set up your club</button>
                 </div>
               </div>
-              <div style={{ flex: "0 1 300px", minWidth: 270 }}>
+              <div className="board-mock" style={{ flex: "0 1 300px", minWidth: 270 }}>
                 {/* the signature leaderboard, in miniature — a real artifact, not a stock illustration */}
                 <div style={{ background: "#15382B", borderRadius: 6, padding: "18px 18px 8px", boxShadow: "0 18px 44px rgba(22,19,15,0.22)", transform: "rotate(-1.2deg)" }}>
                   <div className="mono" style={{ fontSize: 9.5, letterSpacing: "0.26em", textTransform: "uppercase", color: "#D8B45A", marginBottom: 10 }}>
