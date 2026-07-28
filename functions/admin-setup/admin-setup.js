@@ -146,6 +146,35 @@ exports.handler = async (event) => {
     return "pools.scoring / cut_rule / tier_method / max_entries columns ready";
   });
 
+  await step("seed 10 test accounts (test1-10@gmail.com — REMOVE BEFORE LAUNCH)", async () => {
+    /* password 'testing' for all; email pre-confirmed so no magic link needed.
+       Idempotent: existing accounts are left alone. wipe-test-data.sql should
+       drop these before real launch. */
+    await sql(`
+      DO $do$
+      DECLARE i int; v_email text; v_id uuid;
+      BEGIN
+        FOR i IN 1..10 LOOP
+          v_email := 'test' || i || '@gmail.com';
+          IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = v_email) THEN
+            v_id := gen_random_uuid();
+            INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+              raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+            VALUES ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', v_email,
+              extensions.crypt('testing', extensions.gen_salt('bf')), now(),
+              '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now());
+            INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+            VALUES (gen_random_uuid(), v_id, jsonb_build_object('sub', v_id::text, 'email', v_email), 'email', v_id::text, now(), now(), now());
+            INSERT INTO public.profiles (id, email, role) VALUES (v_id, v_email, 'pending')
+              ON CONFLICT (id) DO NOTHING;
+          END IF;
+        END LOOP;
+      END $do$;
+    `);
+    const r = await sql("SELECT count(*) AS n FROM auth.users WHERE email LIKE 'test%@gmail.com';");
+    return "test accounts present: " + JSON.stringify(r);
+  });
+
   await step("pools diagnostic: latest rows (read-only)", async () => {
     const r = await sql("SELECT id, club_id, event_name, published, paid, plan, created_at FROM public.pools ORDER BY created_at DESC LIMIT 10;");
     return JSON.parse(r);
