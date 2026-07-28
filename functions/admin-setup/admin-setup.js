@@ -159,10 +159,13 @@ exports.handler = async (event) => {
           IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = v_email) THEN
             v_id := gen_random_uuid();
             INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-              raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+              raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+              confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current,
+              phone_change, phone_change_token, reauthentication_token)
             VALUES ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', v_email,
               extensions.crypt('testing', extensions.gen_salt('bf')), now(),
-              '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now());
+              '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now(),
+              '', '', '', '', '', '', '', '');
             INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
             VALUES (gen_random_uuid(), v_id, jsonb_build_object('sub', v_id::text, 'email', v_email), 'email', v_id::text, now(), now(), now());
             INSERT INTO public.profiles (id, email, role) VALUES (v_id, v_email, 'pending')
@@ -170,6 +173,20 @@ exports.handler = async (event) => {
           END IF;
         END LOOP;
       END $do$;
+    `);
+    /* GoTrue chokes ("Database error querying schema") on NULLs in its token
+       columns — repair any earlier hand-seeded rows */
+    await sql(`
+      UPDATE auth.users SET
+        confirmation_token = COALESCE(confirmation_token, ''),
+        recovery_token = COALESCE(recovery_token, ''),
+        email_change = COALESCE(email_change, ''),
+        email_change_token_new = COALESCE(email_change_token_new, ''),
+        email_change_token_current = COALESCE(email_change_token_current, ''),
+        phone_change = COALESCE(phone_change, ''),
+        phone_change_token = COALESCE(phone_change_token, ''),
+        reauthentication_token = COALESCE(reauthentication_token, '')
+      WHERE email LIKE 'test%@gmail.com';
     `);
     const r = await sql("SELECT count(*) AS n FROM auth.users WHERE email LIKE 'test%@gmail.com';");
     return "test accounts present: " + JSON.stringify(r);
