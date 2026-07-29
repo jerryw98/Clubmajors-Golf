@@ -2212,7 +2212,7 @@ function ClubMajorsPrototype() {
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Cinzel:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap');
 
         .cm-root {
           --pine: #15382B;
@@ -2235,7 +2235,7 @@ function ClubMajorsPrototype() {
         }
         .cm-root * { box-sizing: border-box; }
         .mono { font-family: 'IBM Plex Mono', monospace; }
-        .display { font-family: 'Cinzel', serif; letter-spacing: 0.08em; }
+        .display { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; letter-spacing: 0.06em; }
 
         /* ---------- demo banner ---------- */
         .demo-band { position: sticky; top: 0; z-index: 120; background: repeating-linear-gradient(135deg, #7A1F1F 0 24px, #6A1919 24px 48px); color: #F7F2E4; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; text-align: center; padding: 9px 14px; line-height: 1.6; }
@@ -2288,7 +2288,7 @@ function ClubMajorsPrototype() {
         .fact-k { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
         .fact-v { font-size: 17px; font-weight: 600; margin-top: 6px; color: var(--pine); }
         .home-body { margin-top: 26px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; }
-        .rules h3, .payout h3 { font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pine); border-bottom: 2px solid var(--brass); display: inline-block; padding-bottom: 4px; margin: 0 0 12px; }
+        .rules h3, .payout h3 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pine); border-bottom: 2px solid var(--brass); display: inline-block; padding-bottom: 4px; margin: 0 0 12px; }
         .rules p { font-size: 15px; line-height: 1.65; margin: 0 0 10px; }
         .rules ul { margin: 0; padding-left: 19px; }
         .rules li { font-size: 14.5px; line-height: 1.6; margin: 0 0 8px; }
@@ -2309,12 +2309,12 @@ function ClubMajorsPrototype() {
 
         /* ---------- picksheet ---------- */
         .sheet-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
-        .sheet-title { font-family: 'Cinzel', serif; font-size: 20px; color: var(--pine); letter-spacing: 0.06em; }
+        .sheet-title { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 20px; color: var(--pine); letter-spacing: 0.06em; }
         .sheet-deadline { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--under); }
         .sheet-sub { font-size: 14px; color: var(--muted); margin-bottom: 22px; }
         .tier-block { border: 1px solid var(--paper-line); background: #FCF9EF; margin-bottom: 18px; }
         .tier-head { display: flex; align-items: baseline; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--paper-line); }
-        .tier-roman { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--brass); width: 34px; }
+        .tier-roman { font-family: 'Source Serif 4', Georgia, serif; font-size: 18px; font-weight: 700; color: var(--brass); width: 34px; }
         .tier-note { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
         .tier-grid { display: grid; grid-template-columns: 1fr 1fr; }
         .pick-card {
@@ -2384,7 +2384,7 @@ function ClubMajorsPrototype() {
         .pick-line { display: grid; grid-template-columns: 30px 1fr 112px 72px; align-items: center; padding: 7px 0; border-bottom: 1px dotted rgba(216,180,90,0.2); color: var(--cream); font-size: 14px; }
         .pick-line:last-child { border-bottom: none; }
         .pick-line.dropped { opacity: 0.38; }
-        .pl-tier { font-family: 'Cinzel', serif; font-size: 12px; color: var(--brass-bright); }
+        .pl-tier { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 12px; color: var(--brass-bright); }
         .pl-score { font-family: 'IBM Plex Mono', monospace; text-align: right; }
         .pl-score.under { color: var(--under-bright); }
         .pl-thru { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; text-align: right; color: rgba(247,242,228,0.55); padding-left: 14px; }
@@ -2392,10 +2392,10 @@ function ClubMajorsPrototype() {
         .board-foot { padding: 10px 18px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.06em; color: rgba(247,242,228,0.45); line-height: 1.7; }
 
         /* ---------- footer ---------- */
-        .landing-h1 { margin: 0; font-family: 'Archivo Black', sans-serif; font-size: 42px; line-height: 1.08; letter-spacing: -0.03em; color: #16130F; }
+        .landing-h1 { margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 44px; line-height: 1.08; letter-spacing: -0.015em; color: #16130F; }
         .rate-item { padding: 2px 30px; }
         .rate-item.first { padding-left: 0; }
-        .rate-price { font-family: 'Archivo Black', sans-serif; font-size: 30px; color: #16130F; line-height: 1; }
+        .rate-price { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 30px; color: #16130F; line-height: 1; }
         .btn-link { background: none; border: none; cursor: pointer; color: var(--pine); font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; padding: 10px 4px; }
         .btn-link:hover { color: var(--under); }
         .powered { margin-top: 140px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
@@ -2406,7 +2406,7 @@ function ClubMajorsPrototype() {
         .club-logo-tile { display: inline-flex; border-radius: 4px; flex-shrink: 0; }
         .settings-grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 4px; }
         .set-block { border: 1px solid var(--paper-line); background: #FCF9EF; padding: 20px; }
-        .set-title { font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pine); border-bottom: 2px solid var(--brass); display: inline-block; padding-bottom: 4px; margin: 0 0 14px; }
+        .set-title { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pine); border-bottom: 2px solid var(--brass); display: inline-block; padding-bottom: 4px; margin: 0 0 14px; }
         .set-sub { font-size: 13.5px; color: var(--muted); margin: 0 0 16px; line-height: 1.55; }
         .club-name-input { width: 100%; font-family: inherit; font-size: 16px; padding: 0 13px; height: 47px; box-sizing: border-box; border: 1px solid var(--paper-line); background: #FFF; color: var(--ink); }
         .club-name-input:focus-visible { outline: 2px solid var(--brass); }
@@ -2648,7 +2648,7 @@ function ClubMajorsPrototype() {
                       <span style={{ position: "absolute", left: 0, top: 0, width: 2.5, height: 18, background: "#15382B" }} />
                       <span style={{ position: "absolute", left: 2.5, top: 0, width: 11.5, height: 9.5, background: "#C2410C", clipPath: "polygon(0 0, 100% 0, 0 100%)" }} />
                     </span>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, letterSpacing: "-0.01em", color: "#16130F" }}>{k}</div>
+                    <div style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 700, fontSize: 19, letterSpacing: "-0.01em", color: "#16130F" }}>{k}</div>
                   </div>
                   <p className="set-sub" style={{ margin: 0 }}>{v}</p>
                 </div>

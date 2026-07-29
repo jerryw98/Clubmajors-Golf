@@ -192,6 +192,28 @@ exports.handler = async (event) => {
     return "test accounts present: " + JSON.stringify(r);
   });
 
+  await step("lock down RLS: enable row security on every public table missing it", async () => {
+    /* Supabase flagged rls_disabled_in_public (Jul 2026): tables created on
+       the fly by functions (score_cache, validation_alerts, backup_snapshots…)
+       had no RLS, leaving them readable via the anon key. Functions talk to
+       the DB through the management API (bypasses RLS), so enabling it with
+       no anon policies simply closes the public window. Core app tables
+       already have RLS + policies and are untouched. */
+    const r = await sql(`
+      DO $do$
+      DECLARE t record; fixed text := '';
+      BEGIN
+        FOR t IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND rowsecurity = false LOOP
+          EXECUTE 'ALTER TABLE public.' || quote_ident(t.tablename) || ' ENABLE ROW LEVEL SECURITY';
+          fixed := fixed || t.tablename || ' ';
+        END LOOP;
+        RAISE NOTICE 'fixed: %', fixed;
+      END $do$;
+      SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;
+    `);
+    return JSON.parse(r);
+  });
+
   await step("pools diagnostic: latest rows (read-only)", async () => {
     const r = await sql("SELECT id, club_id, event_name, published, paid, plan, created_at FROM public.pools ORDER BY created_at DESC LIMIT 10;");
     return JSON.parse(r);
