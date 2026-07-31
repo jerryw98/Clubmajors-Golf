@@ -214,6 +214,41 @@ exports.handler = async (event) => {
     return JSON.parse(r);
   });
 
+  await step("owner account: support@clubmajorsgolf.com password sign-in", async () => {
+    /* password comes from env (OWNER_SEED_PASSWORD) — never from source; the
+       repo is public. Idempotent: re-running resets the password to the env
+       value and guarantees the owner role. */
+    const pw = (process.env.OWNER_SEED_PASSWORD || "").replace(/'/g, "''");
+    if (!pw) return "skipped — OWNER_SEED_PASSWORD env not set";
+    await sql(`
+      DO $do$
+      DECLARE v_id uuid;
+      BEGIN
+        SELECT id INTO v_id FROM auth.users WHERE email = 'support@clubmajorsgolf.com';
+        IF v_id IS NULL THEN
+          v_id := gen_random_uuid();
+          INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+            raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+            confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current,
+            phone_change, phone_change_token, reauthentication_token)
+          VALUES ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', 'support@clubmajorsgolf.com',
+            extensions.crypt('${pw}', extensions.gen_salt('bf')), now(),
+            '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now(),
+            '', '', '', '', '', '', '', '');
+          INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+          VALUES (gen_random_uuid(), v_id, jsonb_build_object('sub', v_id::text, 'email', 'support@clubmajorsgolf.com'), 'email', v_id::text, now(), now(), now());
+        ELSE
+          UPDATE auth.users SET encrypted_password = extensions.crypt('${pw}', extensions.gen_salt('bf')),
+            email_confirmed_at = COALESCE(email_confirmed_at, now())
+          WHERE id = v_id;
+        END IF;
+        INSERT INTO public.profiles (id, email, role) VALUES (v_id, 'support@clubmajorsgolf.com', 'owner')
+          ON CONFLICT (id) DO UPDATE SET role = 'owner', email = 'support@clubmajorsgolf.com';
+      END $do$;
+    `);
+    return "support@clubmajorsgolf.com: password set from env, email confirmed, owner role granted";
+  });
+
   await step("pools diagnostic: latest rows (read-only)", async () => {
     const r = await sql("SELECT id, club_id, event_name, published, paid, plan, created_at FROM public.pools ORDER BY created_at DESC LIMIT 10;");
     return JSON.parse(r);

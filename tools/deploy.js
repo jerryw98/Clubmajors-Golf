@@ -115,6 +115,7 @@ function makeZip(name, data) {
     PLINK_ANNUAL: env.PLINK_ANNUAL, PLINK_SEASON: env.PLINK_SEASON,
     SETUP_KEY: env.SETUP_KEY,
     STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY,
+    OWNER_SEED_PASSWORD: env.OWNER_SEED_PASSWORD,
   };
   const existing = new Set((await (await api(env, `/accounts/${slug}/env?site_id=${SITE}`)).json()).map((v) => v.key));
   for (const [key, value] of Object.entries(wanted)) {
