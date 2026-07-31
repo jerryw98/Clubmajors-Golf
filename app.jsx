@@ -3420,13 +3420,6 @@ function ClubMajorsPrototype() {
                       : "This is what the club pays ClubMajors. Member entry fees stay with the golf shop."}
                   </p>
                   {!feeCovered && (<>
-                  <label className={`bill-option ${setup.billing === "single" ? "selected" : ""}`}>
-                    <input type="radio" name="billing" checked={setup.billing === "single"} onChange={() => setSetup((s) => ({ ...s, billing: "single" }))} />
-                    <span>
-                      <span className="bill-name">Single event — ${eventFee}</span>
-                      <span className="bill-desc">{PRICING_LABEL[selectedEvent.type]} pricing: Majors $75 · all other events $30. Unlimited entries.</span>
-                    </span>
-                  </label>
                   <label className={`bill-option ${setup.billing === "season" ? "selected" : ""}`}>
                     <input type="radio" name="billing" checked={setup.billing === "season"} onChange={() => setSetup((s) => ({ ...s, billing: "season" }))} />
                     <span>
@@ -3439,6 +3432,13 @@ function ClubMajorsPrototype() {
                     <span>
                       <span className="bill-name">Annual Pass — ${ANNUAL_PRICE}/year</span>
                       <span className="bill-desc">Unlimited pools for every PGA Tour event, all four majors included. Pays for itself by the fifth event.</span>
+                    </span>
+                  </label>
+                  <label className={`bill-option ${setup.billing === "single" ? "selected" : ""}`}>
+                    <input type="radio" name="billing" checked={setup.billing === "single"} onChange={() => setSetup((s) => ({ ...s, billing: "single" }))} />
+                    <span>
+                      <span className="bill-name">Single event — ${eventFee}</span>
+                      <span className="bill-desc">{PRICING_LABEL[selectedEvent.type]} pricing: Majors $75 · all other events $30. Unlimited entries.</span>
                     </span>
                   </label>
                   </>)}
