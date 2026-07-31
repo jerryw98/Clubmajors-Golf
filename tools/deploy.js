@@ -116,6 +116,7 @@ function makeZip(name, data) {
     SETUP_KEY: env.SETUP_KEY,
     STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY,
     OWNER_SEED_PASSWORD: env.OWNER_SEED_PASSWORD,
+    SEED_TEST_ACCOUNTS: env.SEED_TEST_ACCOUNTS,
   };
   const existing = new Set((await (await api(env, `/accounts/${slug}/env?site_id=${SITE}`)).json()).map((v) => v.key));
   for (const [key, value] of Object.entries(wanted)) {
@@ -147,7 +148,9 @@ function makeZip(name, data) {
   );
   const redirects = fs.readFileSync(path.join(ROOT, "_redirects"));
   const uploads = [];
-  for (const [name, body] of [["index.html", indexHtml], ["app.jsx", appJsx], ["owner.html", ownerHtml], ["_redirects", redirects]]) {
+  const termsHtml = fs.readFileSync(path.join(ROOT, "terms.html"));
+  const privacyHtml = fs.readFileSync(path.join(ROOT, "privacy.html"));
+  for (const [name, body] of [["index.html", indexHtml], ["app.jsx", appJsx], ["owner.html", ownerHtml], ["_redirects", redirects], ["terms.html", termsHtml], ["privacy.html", privacyHtml]]) {
     digest["/" + name] = sha1(body);
     uploads.push({ kind: "file", name, sha: digest["/" + name], body });
   }

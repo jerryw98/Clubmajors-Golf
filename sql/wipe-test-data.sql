@@ -1,5 +1,12 @@
--- ClubMajors: wipe ALL test data, keep only the two owner accounts.
--- Run in Supabase SQL editor. Transaction-wrapped: all-or-nothing.
+-- ClubMajors: LAUNCH-DAY wipe. Deletes every club, pool, entry, payment and
+-- account EXCEPT the platform owner (support@clubmajorsgolf.com).
+--
+-- BEFORE running this:
+--   1. Set SEED_TEST_ACCOUNTS=0 in ~/clubmajors/.env
+--   2. FORCE_ENV=1 node tools/deploy.js   (otherwise the next deploy quietly
+--      recreates test1-10@gmail.com via the admin-setup seeding step)
+--
+-- Run in the Supabase SQL editor. Transaction-wrapped: all-or-nothing.
 begin;
 
 delete from entries;
@@ -10,27 +17,22 @@ delete from payments;
 delete from giftcard_log;
 delete from validation_alerts;
 delete from signup_requests;
+delete from backup_snapshots;
 
+update profiles set club_id = null;
 delete from profiles
-where id not in (
-  '652f9860-7c23-434e-95c0-ae0b3c46f4ac',   -- jerryw20180314@gmail.com
-  '3981e91e-b2c4-467f-95fd-8ddb3ace11ba'    -- 0wangxinquan0@gmail.com
-);
+where id not in (select id from auth.users where email = 'support@clubmajorsgolf.com');
 
-update profiles set club_id = null
-where id in (
-  '652f9860-7c23-434e-95c0-ae0b3c46f4ac',
-  '3981e91e-b2c4-467f-95fd-8ddb3ace11ba'
-);
 delete from clubs;
 
-delete from auth.users
-where id not in (
-  '652f9860-7c23-434e-95c0-ae0b3c46f4ac',
-  '3981e91e-b2c4-467f-95fd-8ddb3ace11ba'
-);
+delete from auth.identities
+where user_id not in (select id from auth.users where email = 'support@clubmajorsgolf.com');
+delete from auth.users where email <> 'support@clubmajorsgolf.com';
 
 commit;
 
--- verify:
-select (select count(*) from clubs) clubs, (select count(*) from auth.users) users;
+-- verify: expect clubs=0, users=1 (support@), profiles=1 (owner)
+select
+  (select count(*) from clubs) clubs,
+  (select count(*) from auth.users) users,
+  (select count(*) from profiles) profiles;

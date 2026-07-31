@@ -2939,7 +2939,7 @@ function ClubMajorsPrototype() {
             <label className="sheet-sub" style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 12, cursor: "pointer" }}>
               <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} style={{ marginTop: 3 }} aria-label="Agree to pool rules and terms" />
               <span>
-                I agree to the pool rules and terms. My entry and member name are shared with the golf shop (the pool
+                I agree to the pool rules and the <a href="/terms" target="_blank" rel="noopener" style={{ color: "var(--pine)" }}>terms</a>. My entry and member name are shared with the golf shop (the pool
                 admin). Standings are tracked for entertainment purposes only; any entry fees and prizes are handled
                 entirely by the club.
               </span>
@@ -4119,7 +4119,8 @@ function ClubMajorsPrototype() {
             by clubs covers software services (picksheets, live scoring, leaderboards) only. Entry fees and prizes, if
             any, are administered entirely by the host club, which is solely responsible for its pool's compliance with
             applicable laws. Participation is limited to eligible members and guests where permitted by law. Void where
-            prohibited.
+            prohibited.{" "}
+            <a href="/terms" style={{ color: "var(--muted)" }}>Terms</a> · <a href="/privacy" style={{ color: "var(--muted)" }}>Privacy</a>
           </span>
         </footer>
       </main>

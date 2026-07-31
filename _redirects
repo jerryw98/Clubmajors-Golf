@@ -1,2 +1,4 @@
 /owner /owner.html 200
 /demo /?demo=masters 302
+/terms /terms.html 200
+/privacy /privacy.html 200

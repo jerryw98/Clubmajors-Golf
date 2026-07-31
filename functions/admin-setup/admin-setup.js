@@ -147,6 +147,9 @@ exports.handler = async (event) => {
   });
 
   await step("seed 10 test accounts (test1-10@gmail.com — REMOVE BEFORE LAUNCH)", async () => {
+    /* launch-day off switch: set SEED_TEST_ACCOUNTS=0 (or unset) so deploys
+       stop recreating the test fleet, then run sql/wipe-test-data.sql */
+    if (process.env.SEED_TEST_ACCOUNTS !== "1") return "skipped — SEED_TEST_ACCOUNTS is not 1";
     /* password 'testing' for all; email pre-confirmed so no magic link needed.
        Idempotent: existing accounts are left alone. wipe-test-data.sql should
        drop these before real launch. */
