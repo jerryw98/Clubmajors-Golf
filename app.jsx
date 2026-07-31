@@ -1232,16 +1232,16 @@ const THEMES = [
   { id: "navy", name: "Championship Navy", pine: "#1C2C4F", pineDeep: "#111B33", board: "#172441", boardRow: "#1C2C4F", brass: "#B6953C", brassBright: "#D9BC6A" },
   { id: "burgundy", name: "Burgundy & Gold", pine: "#5A1F26", pineDeep: "#3D1218", board: "#4A181F", boardRow: "#562028", brass: "#B6953C", brassBright: "#DCBE70" },
   { id: "fairway", name: "Fairway & Linen", pine: "#205B38", pineDeep: "#143D25", board: "#1B4E30", boardRow: "#236340", brass: "#AC9C74", brassBright: "#E4D9BB" },
-  { id: "slate", name: "Slate & Platinum", pine: "#2A3238", pineDeep: "#1A2024", board: "#232A2F", boardRow: "#2E373D", brass: "#8E989F", brassBright: "#C3CCD3" },
+  { id: "slate", name: "Navy & Cream", pine: "#1B2A45", pineDeep: "#111C30", board: "#16233B", boardRow: "#1F3050", brass: "#C3B490", brassBright: "#EFE6D0" },
   { id: "espresso", name: "Espresso & Saddle", pine: "#3D2B1F", pineDeep: "#271A12", board: "#34251A", boardRow: "#43301F", brass: "#9C7B4A", brassBright: "#C9A671" },
   { id: "royal", name: "Royal & Sterling", pine: "#23346E", pineDeep: "#17224A", board: "#1E2C5E", boardRow: "#26397A", brass: "#8A96B8", brassBright: "#C6D0E8" },
   { id: "midnight", name: "Midnight & Gold", pine: "#14161C", pineDeep: "#0B0D11", board: "#101218", boardRow: "#171A22", brass: "#B6953C", brassBright: "#D9BC6A" },
-  { id: "olive", name: "Olive & Bone", pine: "#3E4224", pineDeep: "#292C16", board: "#363A1F", boardRow: "#42472A", brass: "#A8A278", brassBright: "#D6CFA8" },
+  { id: "olive", name: "Bottle Green & Camel", pine: "#1C4230", pineDeep: "#122D20", board: "#173828", boardRow: "#204A36", brass: "#A9814F", brassBright: "#C7A377" },
   { id: "azalea", name: "Magnolia & Pine", pine: "#164A33", pineDeep: "#0E3423", board: "#133F2B", boardRow: "#175038", brass: "#BFAE85", brassBright: "#EFE3C4" },
   { id: "harbor", name: "Harbor & Sand", pine: "#17444A", pineDeep: "#0E2E33", board: "#133A3F", boardRow: "#1A4D54", brass: "#B99E6B", brassBright: "#DCC697" },
   { id: "ivy", name: "Ivy & Chalk", pine: "#2F6B45", pineDeep: "#1F4A2F", board: "#295D3C", boardRow: "#33754C", brass: "#A9B3A6", brassBright: "#EFF3EC" },
   /* --- country club classics --- */
-  { id: "patrons", name: "Patrons Green & Gold", pine: "#0A5137", pineDeep: "#063521", board: "#084628", boardRow: "#0C5A34", brass: "#C9A227", brassBright: "#F2CE60" },
+  { id: "patrons", name: "Patrons Green & Gold", pine: "#006B54", pineDeep: "#00473A", board: "#005C48", boardRow: "#00745B", brass: "#C9A227", brassBright: "#EFC94C" },
   { id: "heather", name: "Old Course Heather", pine: "#1F3F66", pineDeep: "#142B47", board: "#1A3757", boardRow: "#234670", brass: "#8FA3BC", brassBright: "#D7E1EC" },
   { id: "wicker", name: "Wicker & Hunter", pine: "#1E4633", pineDeep: "#123021", board: "#193D2B", boardRow: "#245139", brass: "#C68A3F", brassBright: "#E9B663" },
   { id: "tartan", name: "Tartan Navy & Claret", pine: "#20304F", pineDeep: "#141F36", board: "#1B2944", boardRow: "#263A5E", brass: "#8C2F38", brassBright: "#C05561" },
@@ -1525,6 +1525,16 @@ function ClubMajorsPrototype() {
   const [entries, setEntries] = useState(DEMO ? MOCK_ENTRIES : []); /* real site starts empty — sample entries live only on /demo */
   const [expanded, setExpanded] = useState(null);
   const [boardQuery, setBoardQuery] = useState("");
+  /* member bookmarks: starred entry ids float to the top of the board */
+  const [stars, setStars] = useState(() => { try { return new Set(JSON.parse(localStorage.getItem("cm-stars") || "[]")); } catch (e) { return new Set(); } });
+  function toggleStar(id) {
+    setStars((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      try { localStorage.setItem("cm-stars", JSON.stringify([...next])); } catch (e) {}
+      return next;
+    });
+  }
   const [themeId, setThemeId] = useState("pine");
   const [custom, setCustom] = useState({ primary: "#15382B", accent: "#D8B45A" });
   const [hexDraft, setHexDraft] = useState({ primary: "#15382B", accent: "#D8B45A" });
@@ -2844,7 +2854,7 @@ function ClubMajorsPrototype() {
               </section>
             )}
 
-            {!locked && fieldMatchesPool && (
+            {fieldMatchesPool && (
               <p className="sheet-sub" style={{ marginTop: -6, marginBottom: 18 }}>
                 <input
                   className="club-name-input"
@@ -2866,7 +2876,7 @@ function ClubMajorsPrototype() {
             )}
 
             {fieldMatchesPool && ACTIVE_TIERS.map((tier) => {
-              const gq = locked ? "" : golferQuery.trim().toLowerCase();
+              const gq = golferQuery.trim().toLowerCase();
               const shownPlayers = gq ? tier.players.filter((p) => p.name.toLowerCase().includes(gq)) : tier.players;
               if (gq && shownPlayers.length === 0) return null;
               return (
@@ -3040,7 +3050,7 @@ function ClubMajorsPrototype() {
               const q = boardQuery.trim().toLowerCase();
               if (!q) return true;
               return (e.entry || "").toLowerCase().includes(q) || (e.member || "").toLowerCase().includes(q);
-            }).map((e) => {
+            }).sort((a, b) => (stars.has(b.id) ? 1 : 0) - (stars.has(a.id) ? 1 : 0)).map((e) => {
               const isOpen = expanded === e.id;
               return (
                 <div className={`board-row ${e.id === myEntryId ? "mine" : ""}`} key={e.id}>
@@ -3048,6 +3058,14 @@ function ClubMajorsPrototype() {
                     <span className="row-pos">{e.posLabel}</span>
                     <span className="row-entry">
                       {e.entry}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label={stars.has(e.id) ? "Remove bookmark" : "Bookmark this entry"}
+                        onClick={(ev) => { ev.stopPropagation(); toggleStar(e.id); }}
+                        onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.stopPropagation(); ev.preventDefault(); toggleStar(e.id); } }}
+                        style={{ marginLeft: 9, cursor: "pointer", fontSize: 15, color: stars.has(e.id) ? "var(--brass-bright)" : "rgba(247,242,228,0.35)", verticalAlign: "1px" }}
+                      >{stars.has(e.id) ? "★" : "☆"}</span>
                       <span className="row-member">{e.member}</span>
                     </span>
                     <span className={`row-total ${!teamMode && e.total < 0 ? "under" : ""}`}>{teamMode || preTee ? "—" : fmtPar(e.total)}</span>
