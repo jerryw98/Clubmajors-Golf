@@ -2409,6 +2409,11 @@ function ClubMajorsPrototype() {
         .set-title { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pine); border-bottom: 2px solid var(--brass); display: inline-block; padding-bottom: 4px; margin: 0 0 14px; }
         .set-sub { font-size: 13.5px; color: var(--muted); margin: 0 0 16px; line-height: 1.55; }
         .club-name-input { width: 100%; font-family: inherit; font-size: 16px; padding: 0 13px; height: 47px; box-sizing: border-box; border: 1px solid var(--paper-line); background: #FFF; color: var(--ink); }
+        /* iOS Safari gives date/time inputs an intrinsic min-width that blows
+           past the container on phones — zero it and cap every form control */
+        input[type="datetime-local"], input[type="date"], input[type="time"] { min-width: 0; max-width: 100%; display: block; -webkit-appearance: none; appearance: none; border-radius: 0; }
+        input, select, textarea { max-width: 100%; min-width: 0; box-sizing: border-box; }
+        .field { min-width: 0; }
         .club-name-input:focus-visible { outline: 2px solid var(--brass); }
         .swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
         .swatch { appearance: none; cursor: pointer; border: 1.5px solid var(--paper-line); background: #FFF; padding: 0 0 9px; text-align: center; font-family: inherit; }
