@@ -3033,6 +3033,9 @@ function ClubMajorsPrototype() {
                             <span className="pl-tier">{p.tier}</span>
                             <span>
                               {p.name}
+                              {!counted && !preTee && (
+                                <span className="mono" style={{ marginLeft: 8, fontSize: 9.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(247,242,228,0.5)", border: "1px solid rgba(247,242,228,0.25)", padding: "1px 6px 2px", borderRadius: 2, verticalAlign: "middle", whiteSpace: "nowrap" }}>drop</span>
+                              )}
                               {lastMover === pid && live && <span className="drop-tag" style={{ color: "var(--brass-bright)", marginLeft: 8 }}>● MOVED</span>}
                             </span>
                             <span className={`pl-score ${val < 0 ? "under" : ""}`}>
@@ -3048,7 +3051,7 @@ function ClubMajorsPrototype() {
                                 </span>
                               )}
                             </span>
-                            <span className="pl-thru">{preTee ? "" : (s.mc ? "MC" : s.thru >= 18 ? "F" : `THRU ${s.thru}`) + (!counted ? " · DROP" : "")}</span>
+                            <span className="pl-thru">{preTee ? "" : s.mc ? "MC" : s.thru >= 18 ? "F" : `THRU ${s.thru}`}</span>
                           </div>
                         );
                       })}
@@ -3966,7 +3969,7 @@ function ClubMajorsPrototype() {
 
         {/* ============ CLUB ADMIN / ACCOUNT ============ */}
         {view === "signin" && (
-          <div className="settings-grid" style={{ maxWidth: 520, margin: "0 auto" }}>
+          <div className="settings-grid" style={session ? undefined : { maxWidth: 520, margin: "0 auto" }}>
             <section className="set-block">
               <h3 className="set-title">{session ? "Account" : INVITE ? "Join your golf shop on ClubMajors" : "Club Admin Sign In"}</h3>
               {INVITE && !session && (
