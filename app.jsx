@@ -1244,7 +1244,6 @@ const THEMES = [
   { id: "patrons", name: "Patrons Green & Gold", pine: "#006B54", pineDeep: "#00473A", board: "#005C48", boardRow: "#00745B", brass: "#C9A227", brassBright: "#EFC94C" },
   { id: "heather", name: "Old Course Heather", pine: "#1F3F66", pineDeep: "#142B47", board: "#1A3757", boardRow: "#234670", brass: "#8FA3BC", brassBright: "#D7E1EC" },
   { id: "wicker", name: "Wicker & Hunter", pine: "#1E4633", pineDeep: "#123021", board: "#193D2B", boardRow: "#245139", brass: "#C68A3F", brassBright: "#E9B663" },
-  { id: "tartan", name: "Tartan Navy & Claret", pine: "#20304F", pineDeep: "#141F36", board: "#1B2944", boardRow: "#263A5E", brass: "#8C2F38", brassBright: "#C05561" },
   { id: "fescue", name: "Seaside Fescue", pine: "#3A5A40", pineDeep: "#27402C", board: "#324F38", boardRow: "#426749", brass: "#B49B57", brassBright: "#E3CE8F" },
   { id: "carolina", name: "Carolina Sky", pine: "#14395C", pineDeep: "#0C2740", board: "#11324F", boardRow: "#1A4266", brass: "#6E9FC4", brassBright: "#9FC9E8" },
 ];
