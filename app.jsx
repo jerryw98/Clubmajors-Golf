@@ -2599,9 +2599,6 @@ function ClubMajorsPrototype() {
           <div style={{ maxWidth: 880, margin: "34px auto 0" }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "40px 56px", alignItems: "center" }}>
               <div style={{ flex: "1 1 400px", minWidth: 300 }}>
-                <div className="mono" style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--under)", marginBottom: 14 }}>
-                  Golf tournament pools · Private clubs
-                </div>
                 <h1 className="landing-h1">
                   Major-championship pools for your club
                 </h1>
