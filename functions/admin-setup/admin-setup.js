@@ -576,7 +576,8 @@ exports.handler = async (event) => {
                    c.theme -> 'pros' AS named_pros,
                    COALESCE((SELECT json_agg(json_build_object('email', p.email, 'role', p.role, 'joined', p.created_at)) FROM public.profiles p WHERE p.club_id = c.id AND p.role IN ('pro','owner')), '[]'::json) AS admins,
                    COALESCE((SELECT SUM(pm.amount_cents) FROM public.payments pm WHERE pm.club_id = c.id), 0) AS revenue_cents,
-                   (SELECT row_to_json(x) FROM (SELECT pm2.plan, pm2.created_at, pm2.amount_cents FROM public.payments pm2 WHERE pm2.club_id = c.id ORDER BY pm2.created_at DESC LIMIT 1) x) AS latest_payment
+                   (SELECT row_to_json(x) FROM (SELECT pm2.plan, pm2.created_at, pm2.amount_cents FROM public.payments pm2 WHERE pm2.club_id = c.id ORDER BY pm2.created_at DESC LIMIT 1) x) AS latest_payment,
+                   (SELECT max(u.last_sign_in_at) FROM auth.users u JOIN public.profiles p3 ON p3.id = u.id WHERE p3.club_id = c.id) AS last_admin_signin
             FROM public.clubs c ORDER BY c.created_at) cc), '[]'::json),
           'pools', COALESCE((SELECT json_agg(row_to_json(pp)) FROM (
             SELECT po.id, po.club_id, po.event_name, po.published, po.created_at, po.deadline, po.entry_fee,

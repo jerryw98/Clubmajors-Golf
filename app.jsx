@@ -787,6 +787,34 @@ function OwnerDashboard({ liveSource }) {
           <MiniBars items={clubsByMonth} />
         </section>
         <section className="set-block">
+          <h3 className="set-title">Signup funnel</h3>
+          {(() => {
+            const published = clubs.filter((c) => pools.some((p) => p.club_id === c.id && p.published)).length;
+            const paid = clubs.filter((c) => paidBy(c.id) > 0).length;
+            return [["Signup requests", signups.length], ["Clubs created", clubs.length], ["Published a pool", published], ["Paid", paid]].map(([k, v]) => (
+              <div className="payout-row" key={k}><span>{k}</span><span className="mono">{v}</span></div>
+            ));
+          })()}
+        </section>
+        <section className="set-block">
+          <h3 className="set-title">Renewals</h3>
+          {(() => {
+            const upcoming = clubs.filter((c) => c.paid_until).sort((a, b) => new Date(a.paid_until) - new Date(b.paid_until));
+            if (!upcoming.length) return <p className="sheet-sub">No active passes.</p>;
+            return upcoming.map((c) => {
+              const days = Math.round((new Date(c.paid_until) - Date.now()) / 86400000);
+              return (
+                <div className="payout-row" key={c.id}>
+                  <span>{c.name} · {c.plan === "annual" ? "Annual" : c.plan === "season2026" ? "Season" : c.plan || "—"}</span>
+                  <span className="mono" style={{ color: days < 30 ? "var(--under)" : "var(--pine)" }}>
+                    {new Date(c.paid_until).toLocaleDateString([], { month: "short", day: "numeric", year: "2-digit" })} · {days}d
+                  </span>
+                </div>
+              );
+            });
+          })()}
+        </section>
+        <section className="set-block">
           <h3 className="set-title">Entries by pool</h3>
           {topPools.length === 0 && <p className="sheet-sub">No pools yet.</p>}
           {topPools.map((t) => (
@@ -893,9 +921,13 @@ function OwnerDashboard({ liveSource }) {
             return (
               <div key={c.id} style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr 1fr 0.6fr 0.7fr 0.9fr 0.9fr", gap: 6, alignItems: "center", padding: "9px 0", borderBottom: "1px dotted var(--paper-line)", fontSize: 12.5, opacity: c.status === "active" ? 1 : 0.55 }}>
                 <span>
-                  <strong>{c.name}</strong>
+                  <strong>{c.name}</strong>{" "}
+                  <a className="mono" style={{ fontSize: 10, color: "var(--muted)" }} href={"/?club=" + c.slug} target="_blank" rel="noopener">view ↗</a>
                   <span style={{ display: "block", fontSize: 11, color: "var(--muted)" }}>
                     {pros.length ? pros.map((m) => m.email).join(", ") : "no pro assigned"}
+                  </span>
+                  <span className="mono" style={{ display: "block", fontSize: 10, color: "var(--muted)" }}>
+                    last sign-in {c.last_admin_signin ? new Date(c.last_admin_signin).toLocaleDateString([], { month: "short", day: "numeric" }) : "never"}
                   </span>
                 </span>
                 <span className="mono">{c.plan === "annual" ? "ANNUAL" : (c.plan || "single").toUpperCase()}</span>
@@ -2641,7 +2673,7 @@ function ClubMajorsPrototype() {
               {[
                 ["Made for private clubs", "Your crest, your colors, your rules, your payouts. To your members it looks and feels like the club's own pool, not third-party software."],
                 ["Set up in minutes", "Pick the event, set the entry fee, choose your rules — we write them out for you, and the picksheet and leaderboard build themselves from the tournament field."],
-                ["Support that answers", "A real person reads and answers every email — tournament weekends included."],
+                ["Support that answers", "Email support@clubmajorsgolf.com and a real person reads and answers — tournament weekends included."],
                 ["Scores you can trust", "We check every score against multiple independent data feeds, around the clock. If a feed goes stale or two sources disagree, we catch it before your members do."],
               ].map(([k, v]) => (
                 <div key={k}>
@@ -3903,7 +3935,7 @@ function ClubMajorsPrototype() {
                       <button className="btn btn-ghost" onClick={() => setView("setup")}>Back to setup</button>
                     </div>
                     {payUrl ? (
-                      <p className="pro-note" style={{ marginTop: 16 }}>Opens Stripe's secure checkout in a new tab. Your card details go straight to Stripe — ClubMajors never sees them.</p>
+                      <p className="pro-note" style={{ marginTop: 16 }}>Opens Stripe's secure checkout in a new tab. Your card details go straight to Stripe — ClubMajors never sees them. By paying you agree to the <a href="/terms" target="_blank" rel="noopener" style={{ color: "var(--pine)" }}>Terms of Service</a>.</p>
                     ) : (
                       <p className="pro-note" style={{ marginTop: 16 }}>Card checkout turns on once Stripe is connected. For now the pool publishes and the fee is billed by invoice.</p>
                     )}
@@ -3961,6 +3993,11 @@ function ClubMajorsPrototype() {
                     <button className="btn btn-ghost" onClick={() => setView("signin")}>Already set up? Sign in</button>
                   </div>
                   {signupState === "error" && <p className="set-sub" style={{ marginTop: 12, color: "var(--under)" }}>Something went wrong. Try again in a minute.</p>}
+                  <p className="set-sub" style={{ marginTop: 14, fontSize: 12.5 }}>
+                    By creating a club you agree to the <a href="/terms" target="_blank" rel="noopener" style={{ color: "var(--pine)" }}>Terms of Service</a> and{" "}
+                    <a href="/privacy" target="_blank" rel="noopener" style={{ color: "var(--pine)" }}>Privacy Policy</a>.
+                    Questions? <a href="mailto:support@clubmajorsgolf.com" style={{ color: "var(--pine)" }}>support@clubmajorsgolf.com</a>
+                  </p>
                 </>
               )}
             </section>
@@ -4123,7 +4160,7 @@ function ClubMajorsPrototype() {
             any, are administered entirely by the host club, which is solely responsible for its pool's compliance with
             applicable laws. Participation is limited to eligible members and guests where permitted by law. Void where
             prohibited.{" "}
-            <a href="/terms" style={{ color: "var(--muted)" }}>Terms</a> · <a href="/privacy" style={{ color: "var(--muted)" }}>Privacy</a>
+            <a href="/terms" style={{ color: "var(--muted)" }}>Terms</a> · <a href="/privacy" style={{ color: "var(--muted)" }}>Privacy</a> · <a href="mailto:support@clubmajorsgolf.com" style={{ color: "var(--muted)" }}>support@clubmajorsgolf.com</a>
           </span>
         </footer>
       </main>
