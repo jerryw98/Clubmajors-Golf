@@ -1199,22 +1199,22 @@ const THEMES = [
   { id: "mono", name: "Classic Black & White", pine: "#1C1C1C", pineDeep: "#0D0D0D", board: "#161616", boardRow: "#242424", brass: "#8F8F8F", brassBright: "#EDEDED" },
   { id: "navy", name: "Championship Navy", pine: "#1C2C4F", pineDeep: "#111B33", board: "#172441", boardRow: "#1C2C4F", brass: "#B6953C", brassBright: "#D9BC6A" },
   { id: "burgundy", name: "Burgundy & Gold", pine: "#5A1F26", pineDeep: "#3D1218", board: "#4A181F", boardRow: "#562028", brass: "#B6953C", brassBright: "#DCBE70" },
-  { id: "fairway", name: "Fairway & Copper", pine: "#205B38", pineDeep: "#143D25", board: "#1B4E30", boardRow: "#236340", brass: "#A8703D", brassBright: "#D49058" },
+  { id: "fairway", name: "Fairway & Linen", pine: "#205B38", pineDeep: "#143D25", board: "#1B4E30", boardRow: "#236340", brass: "#AC9C74", brassBright: "#E4D9BB" },
   { id: "slate", name: "Slate & Platinum", pine: "#2A3238", pineDeep: "#1A2024", board: "#232A2F", boardRow: "#2E373D", brass: "#8E989F", brassBright: "#C3CCD3" },
   { id: "espresso", name: "Espresso & Saddle", pine: "#3D2B1F", pineDeep: "#271A12", board: "#34251A", boardRow: "#43301F", brass: "#9C7B4A", brassBright: "#C9A671" },
   { id: "royal", name: "Royal & Sterling", pine: "#23346E", pineDeep: "#17224A", board: "#1E2C5E", boardRow: "#26397A", brass: "#8A96B8", brassBright: "#C6D0E8" },
   { id: "midnight", name: "Midnight & Gold", pine: "#14161C", pineDeep: "#0B0D11", board: "#101218", boardRow: "#171A22", brass: "#B6953C", brassBright: "#D9BC6A" },
   { id: "olive", name: "Olive & Bone", pine: "#3E4224", pineDeep: "#292C16", board: "#363A1F", boardRow: "#42472A", brass: "#A8A278", brassBright: "#D6CFA8" },
-  { id: "azalea", name: "Azalea & Pine", pine: "#164A33", pineDeep: "#0E3423", board: "#133F2B", boardRow: "#175038", brass: "#C96A85", brassBright: "#F0A0B8" },
+  { id: "azalea", name: "Magnolia & Pine", pine: "#164A33", pineDeep: "#0E3423", board: "#133F2B", boardRow: "#175038", brass: "#BFAE85", brassBright: "#EFE3C4" },
   { id: "harbor", name: "Harbor & Sand", pine: "#17444A", pineDeep: "#0E2E33", board: "#133A3F", boardRow: "#1A4D54", brass: "#B99E6B", brassBright: "#DCC697" },
   { id: "ivy", name: "Ivy & Chalk", pine: "#2F6B45", pineDeep: "#1F4A2F", board: "#295D3C", boardRow: "#33754C", brass: "#A9B3A6", brassBright: "#EFF3EC" },
   /* --- country club classics --- */
   { id: "patrons", name: "Patrons Green & Gold", pine: "#0A5137", pineDeep: "#063521", board: "#084628", boardRow: "#0C5A34", brass: "#C9A227", brassBright: "#F2CE60" },
   { id: "heather", name: "Old Course Heather", pine: "#1F3F66", pineDeep: "#142B47", board: "#1A3757", boardRow: "#234670", brass: "#8FA3BC", brassBright: "#D7E1EC" },
   { id: "wicker", name: "Wicker & Hunter", pine: "#1E4633", pineDeep: "#123021", board: "#193D2B", boardRow: "#245139", brass: "#C68A3F", brassBright: "#E9B663" },
-  { id: "tartan", name: "Tartan Navy & Red", pine: "#20304F", pineDeep: "#141F36", board: "#1B2944", boardRow: "#263A5E", brass: "#B04A3A", brassBright: "#E58270" },
+  { id: "tartan", name: "Tartan Navy & Claret", pine: "#20304F", pineDeep: "#141F36", board: "#1B2944", boardRow: "#263A5E", brass: "#8C2F38", brassBright: "#C05561" },
   { id: "fescue", name: "Seaside Fescue", pine: "#3A5A40", pineDeep: "#27402C", board: "#324F38", boardRow: "#426749", brass: "#B49B57", brassBright: "#E3CE8F" },
-  { id: "carolina", name: "Carolina Sky", pine: "#14395C", pineDeep: "#0C2740", board: "#11324F", boardRow: "#1A4266", brass: "#6FA8AA", brassBright: "#A8D8DA" },
+  { id: "carolina", name: "Carolina Sky", pine: "#14395C", pineDeep: "#0C2740", board: "#11324F", boardRow: "#1A4266", brass: "#6E9FC4", brassBright: "#9FC9E8" },
 ];
 
 /* Upcoming events + platform pricing (what the CLUB pays ClubMajors to run a pool).
