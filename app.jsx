@@ -3254,6 +3254,11 @@ function ClubMajorsPrototype() {
                           This deadline has already passed — members are locked out of picks. Set a time before Thursday’s first tee.
                         </span>
                       )}
+                      {selectedEvent && new Date(setup.deadline).getTime() > new Date(etInstant(selectedEvent.start, 23, 59)).getTime() && (
+                        <span className="field-hint" style={{ color: "#a33b2e" }}>
+                          Picks can't stay open after the tournament starts — set the deadline no later than round-1 day ({selectedEvent.start}).
+                        </span>
+                      )}
                     </label>
                     <div className="field">
                       <span className="field-k">Entries per member</span>
@@ -3508,6 +3513,11 @@ function ClubMajorsPrototype() {
                       className="btn btn-primary"
                       disabled={payoutSum !== 100}
                       onClick={async () => {
+                        /* hard rule: picks can never stay open past round-1 day */
+                        if (new Date(setup.deadline).getTime() > new Date(etInstant(selectedEvent.start, 23, 59)).getTime()) {
+                          setSaveMsg("Fix the picks deadline first — it can't be after the tournament starts (round 1: " + selectedEvent.start + ").");
+                          return;
+                        }
                         const evName = selectedEvent.name.split(" · ")[0];
                         let poolAfter = dbPool;
                         if (!dbPool && dbClub) {
@@ -3765,9 +3775,13 @@ function ClubMajorsPrototype() {
                       onClick={() => setThemeId(t.id)}
                       aria-pressed={themeId === t.id}
                     >
-                      <span className="swatch-chip">
-                        <span style={{ background: t.pine }} />
-                        <span style={{ background: t.brassBright }} />
+                      <span className="swatch-chip" style={{ display: "block", background: t.pine, borderBottom: "3px solid " + t.brassBright, padding: "10px 10px 8px", textAlign: "left" }}>
+                        <span style={{ display: "block", fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 13.5, color: "#F7F2E4", letterSpacing: "0.02em" }}>{clubName || "Your Club"}</span>
+                        <span className="mono" style={{ display: "block", fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: t.brassBright, marginTop: 3 }}>Est. 1921 · Member Pools</span>
+                        <span style={{ display: "flex", justifyContent: "space-between", marginTop: 7, background: t.board, padding: "4px 6px" }}>
+                          <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 9.5, color: "#F7F2E4" }}>1 · Breakfast Ball Boys</span>
+                          <span className="mono" style={{ fontSize: 9, color: t.brassBright }}>-31</span>
+                        </span>
                       </span>
                       <span className="swatch-name">{t.name}</span>
                     </button>
