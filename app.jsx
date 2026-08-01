@@ -1290,10 +1290,19 @@ const TEAM_INDEX = (() => { const m = {}; TEAM_TIERS.forEach((t) => t.players.fo
 const isTeamEl = (x) => typeof x === "string" && x.slice(0, 5) === "team:";
 const isTbsEl = (x) => typeof x === "string" && x.slice(0, 4) === "tbs:";
 
+/* An event is offerable while pools can still reasonably be built for it:
+   it leaves the dropdown 36 hours after its default picks deadline (Friday
+   evening of tournament week) — late enough for a same-week pool with a
+   custom deadline, early enough that finished events never linger. */
 const EVENTS = EVENTS_ALL
-  .filter((e) => new Date(e.end + "T23:59:00").getTime() > Date.now() - 3 * 86400000)
+  .filter((e) => new Date(etInstant(e.start, 7, 0)).getTime() + 36 * 3600000 > Date.now())
   .sort((a, b) => a.start.localeCompare(b.start))
   .map((e) => ({ ...e, dates: eventDates(e) }));
+/* Default for new pools: the first event whose picks deadline is still in the
+   future — from Thursday on, that's next week's tournament. */
+function nextOpenEvent() {
+  return EVENTS.find((e) => new Date(defaultDeadline(e)).getTime() > Date.now()) || EVENTS[0] || EVENTS_ALL[EVENTS_ALL.length - 1];
+}
 const PLATFORM_PRICING = { major: 75, signature: 30, standard: 30, team: 30 };
 const PRICING_LABEL = { major: "Major", signature: "Signature Event", standard: "Standard Event", team: "Team Event" };
 const ANNUAL_PRICE = 330; /* 4 × major ($75) + $30 · all PGA Tour events */
@@ -1944,9 +1953,9 @@ function ClubMajorsPrototype() {
 
   /* ----- Pool Setup (club pro admin) ----- */
   const [setup, setSetup] = useState({
-    eventId: EVENTS.length ? EVENTS[0].id : "open2026",
+    eventId: (nextOpenEvent() || {}).id,
     entryFee: 50,
-    deadline: toLocalInput(defaultDeadline(EVENTS[0])),
+    deadline: toLocalInput(defaultDeadline(nextOpenEvent())),
     description:
       "Open to all members and their guests. All payouts are made in club pro shop credit. Winners announced Sunday evening.",
     rules: "",
@@ -2011,13 +2020,13 @@ function ClubMajorsPrototype() {
   useEffect(() => {
     if (!EVENTS.length) return;
     if (!EVENTS.find((e) => e.id === setup.eventId)) {
-      const next = EVENTS[0];
-      setSetup((s) => ({ ...s, eventId: next.id, deadline: toLocalInput(defaultDeadline(next)) }));
+      const next = nextOpenEvent();
+      if (next) setSetup((s) => ({ ...s, eventId: next.id, deadline: toLocalInput(defaultDeadline(next)) }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setup.eventId]);
 
-  const selectedEvent = EVENTS.find((e) => e.id === setup.eventId) || EVENTS[0];
+  const selectedEvent = EVENTS.find((e) => e.id === setup.eventId) || nextOpenEvent();
   const eventFee = PLATFORM_PRICING[selectedEvent.type];
   const payoutSum = setup.payouts.reduce((a, b) => a + (Number(b) || 0), 0);
   /* Platform fee already covered? Single-event pools carry paid=true once the
