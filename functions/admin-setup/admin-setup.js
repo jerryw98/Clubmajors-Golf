@@ -140,7 +140,7 @@ exports.handler = async (event) => {
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS scoring text;
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS cut_rule text;
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS tier_method text;
-      ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS max_entries text;
+      ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS max_entries integer; -- integer in prod; NULL = unlimited
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS member_edits boolean;
     `);
     return "pools.scoring / cut_rule / tier_method / max_entries columns ready";

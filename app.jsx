@@ -1709,7 +1709,7 @@ function ClubMajorsPrototype() {
           scoring: pool.scoring || prev.scoring,
           cutRule: pool.cut_rule || prev.cutRule,
           tierMethod: pool.tier_method || prev.tierMethod,
-          maxEntries: pool.max_entries || prev.maxEntries,
+          maxEntries: pool.max_entries == null ? prev.maxEntries : String(pool.max_entries),
           memberEdits: typeof pool.member_edits === "boolean" ? pool.member_edits : prev.memberEdits,
         }));
       }
@@ -3562,7 +3562,7 @@ function ClubMajorsPrototype() {
                                 scoring: setup.scoring,
                                 cut_rule: setup.cutRule,
                                 tier_method: setup.tierMethod,
-                                max_entries: String(setup.maxEntries),
+                                max_entries: setup.maxEntries === "unlimited" ? null : Number(setup.maxEntries),
                                 member_edits: !!setup.memberEdits,
                               })
                               .select()
@@ -3588,7 +3588,7 @@ function ClubMajorsPrototype() {
                               scoring: setup.scoring,
                               cut_rule: setup.cutRule,
                               tier_method: setup.tierMethod,
-                              max_entries: String(setup.maxEntries),
+                              max_entries: setup.maxEntries === "unlimited" ? null : Number(setup.maxEntries),
                               member_edits: !!setup.memberEdits,
                             };
                             const changingEvent = dbPool.event_name && dbPool.event_name !== evName && entries.length > 0;
