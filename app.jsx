@@ -1485,8 +1485,12 @@ function generateRules(s) {
 
 function poolScore(id, scores) {
   const s = scores[id];
-  if (!s) return 99;
-  if (s.total == null) return 99; /* WD before posting a total — worst score, like a missing pick */
+  /* a golfer with no posted score (withdrew before teeing off, or missing
+     from the feed mid-event) scores +8 for all four rounds — consistent with
+     the missed-cut rule, and survivable in all-six pools instead of the old
+     99-stroke wipeout */
+  if (!s) return MC_PENALTY_PER_ROUND * 4;
+  if (s.total == null) return MC_PENALTY_PER_ROUND * 4;
   if (s.mc) return s.total + MC_PENALTY_PER_ROUND * 2;
   return s.total;
 }
@@ -1840,6 +1844,16 @@ function ClubMajorsPrototype() {
     if (!signupClub.trim() || !signupEmail.trim()) return;
     setSignupState("sending");
     try {
+      /* already registered? don't create a second club — send them to their own */
+      try {
+        const { data: exists } = await sb.rpc("email_registered", { p_email: signupEmail.trim() });
+        if (exists === true) {
+          try { localStorage.removeItem("cm-signup-club"); } catch (e) {}
+          await sb.auth.signInWithOtp({ email: signupEmail.trim(), options: { emailRedirectTo: window.location.origin } });
+          setSignupState("exists");
+          return;
+        }
+      } catch (e) { /* RPC missing pre-migration — fall through to normal signup */ }
       try { localStorage.setItem("cm-signup-club", signupClub.trim()); } catch (e) {}
       await requestSignup(signupEmail.trim(), signupClub.trim(), signupReferral); setSignupState("sent");
     }
@@ -2446,6 +2460,11 @@ function ClubMajorsPrototype() {
         .rate-item { padding: 2px 30px; }
         .rate-item.first { padding-left: 0; }
         .rate-price { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 30px; color: #16130F; line-height: 1; }
+        /* one radius language sitewide */
+        .set-block, .facts, .champ-banner, .tier-block, .board-wrap, .bill-option, .publish-confirm, .swatch-chip { border-radius: 8px; }
+        .board-wrap, .swatch-chip { overflow: hidden; }
+        .club-name-input, .btn, .submit-bar input, .hex-input, .swatch, .seg { border-radius: 6px; }
+        .seg { overflow: hidden; }
         .btn-link { background: none; border: none; cursor: pointer; color: var(--pine); font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; padding: 10px 4px; }
         .btn-link:hover { color: var(--under); }
         .powered { margin-top: 140px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
@@ -2461,7 +2480,9 @@ function ClubMajorsPrototype() {
         .club-name-input { width: 100%; font-family: inherit; font-size: 16px; padding: 0 13px; height: 47px; box-sizing: border-box; border: 1px solid var(--paper-line); background: #FFF; color: var(--ink); }
         /* iOS Safari gives date/time inputs an intrinsic min-width that blows
            past the container on phones — zero it and cap every form control */
-        input[type="datetime-local"], input[type="date"], input[type="time"] { min-width: 0; max-width: 100%; display: block; -webkit-appearance: none; appearance: none; border-radius: 0; }
+        input[type="datetime-local"], input[type="date"], input[type="time"] { min-width: 0; max-width: 100%; display: block; -webkit-appearance: none; appearance: none; }
+        input[type="datetime-local"].club-name-input { line-height: 45px; }
+        input::-webkit-date-and-time-value { min-height: 45px; line-height: 45px; text-align: left; margin: 0; }
         input, select, textarea { max-width: 100%; min-width: 0; box-sizing: border-box; }
         .field { min-width: 0; }
         .club-name-input:focus-visible { outline: 2px solid var(--brass); }
@@ -4008,7 +4029,12 @@ function ClubMajorsPrototype() {
                 </div>
               </div>
               <h3 className="set-title">Set up your club</h3>
-              {signupState === "sent" ? (
+              {signupState === "exists" ? (
+                <p className="set-sub" style={{ color: "var(--pine)" }}>
+                  You've already registered with <strong>{signupEmail}</strong> — no new club was created. We emailed you a
+                  sign-in link that takes you straight to your club. (Prefer a password? Use "Already set up? Sign in.")
+                </p>
+              ) : signupState === "sent" ? (
                 <p className="set-sub" style={{ color: "var(--pine)" }}>
                   Check <strong>{signupEmail}</strong> — we sent a sign-in link. Click it and your club will be ready to publish its first pool.
                 </p>

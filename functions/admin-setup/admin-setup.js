@@ -252,6 +252,16 @@ exports.handler = async (event) => {
     return "support@clubmajorsgolf.com: password set from env, email confirmed, owner role granted";
   });
 
+  await step("email registered check: signup form detects existing accounts", async () => {
+    await sql(`
+      CREATE OR REPLACE FUNCTION public.email_registered(p_email text) RETURNS boolean
+      LANGUAGE sql SECURITY DEFINER SET search_path = public
+      AS $fn$ SELECT EXISTS (SELECT 1 FROM auth.users WHERE lower(email) = lower(trim(p_email))); $fn$;
+      GRANT EXECUTE ON FUNCTION public.email_registered(text) TO anon, authenticated;
+    `);
+    return "email_registered RPC ready";
+  });
+
   await step("pools diagnostic: latest rows (read-only)", async () => {
     const r = await sql("SELECT id, club_id, event_name, published, paid, plan, created_at FROM public.pools ORDER BY created_at DESC LIMIT 10;");
     return JSON.parse(r);
