@@ -1947,6 +1947,7 @@ function ClubMajorsPrototype() {
     { id: "picks", label: "Picksheet", roles: ["guest", "member", "pending", "pro", "owner"] },
     { id: "board", label: "Leaderboard", roles: ["guest", "member", "pending", "pro", "owner"] },
     { id: "setup", label: "Pool Setup", roles: ["pro", "owner"] },
+    { id: "archive", label: "Past Pools", roles: ["pro", "owner"] },
     { id: "settings", label: "Club Settings", roles: ["pro", "owner"] },
     { id: "signin", label: session ? "Account" : "Club Admin", roles: ["guest", "member", "pending", "pro", "owner"] },
   ].filter((t) => t.roles.includes(role) && !(DEMO && t.id === "signin")); /* demo shows the pure member view — no account tab */
@@ -2491,7 +2492,7 @@ function ClubMajorsPrototype() {
         .swatch:hover { border-color: var(--brass); }
         .swatch.selected { border-color: var(--pine); box-shadow: 0 0 0 1.5px var(--pine); }
         .swatch:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-        .swatch-chip { display: flex; height: 40px; }
+        .swatch-chip { display: block; height: auto; border-radius: 6px 6px 0 0; }
         .swatch-chip span:first-child { flex: 3; }
         .swatch-chip span:last-child { flex: 1; }
         .swatch-name { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); display: block; margin-top: 9px; padding: 0 4px; }
@@ -3460,42 +3461,6 @@ function ClubMajorsPrototype() {
                   </p>
                 </section>
 
-                <section className="set-block">
-                  <h3 className="set-title">Past pools</h3>
-                  {pastResults.length === 0 && (
-                    <p className="set-sub">Finished pools are archived here automatically when you start the next event's pool — final standings included.</p>
-                  )}
-                  {pastResults.map((r) => {
-                    const key = r.id || r.pool_id;
-                    const open = expandedResult === key;
-                    const rows = Array.isArray(r.standings) ? r.standings : [];
-                    return (
-                      <div key={key} style={{ borderBottom: "1px dotted var(--paper-line)", padding: "8px 0" }}>
-                        <button className="remove-link" style={{ color: "var(--pine)", display: "flex", width: "100%", justifyContent: "space-between", textAlign: "left" }} onClick={() => setExpandedResult(open ? null : key)}>
-                          <span><strong>{r.event_name}</strong> · {rows.length} entries</span>
-                          <span className="mono" style={{ fontSize: 12 }}>
-                            {r.finalized_at ? new Date(r.finalized_at).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : ""} {open ? "▲" : "▼"}
-                          </span>
-                        </button>
-                        {open && (
-                          <div style={{ marginTop: 8 }}>
-                            {rows.slice(0, 20).map((row, i) => (
-                              <div className="payout-row" key={i} style={{ padding: "6px 0" }}>
-                                <span>
-                                  <span className="mono" style={{ display: "inline-block", width: 34, color: "var(--muted)" }}>{row.pos}</span>
-                                  {row.entry}
-                                  <span style={{ color: "var(--muted)", marginLeft: 8, fontStyle: "italic", fontSize: 12 }}>{row.member}</span>
-                                </span>
-                                <span className="mono">{row.total === 0 ? "E" : row.total > 0 ? "+" + row.total : row.total}</span>
-                              </div>
-                            ))}
-                            {rows.length > 20 && <p className="seg-hint">…and {rows.length - 20} more entries</p>}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </section>
 
                 <section className="set-block">
                   <h3 className="set-title">{feeCovered ? "Publish" : "Publish — platform fee"}</h3>
@@ -3674,6 +3639,55 @@ function ClubMajorsPrototype() {
                 </section>
               </div>
             )}
+          </>
+        )}
+
+        {/* ============ PAST POOLS (admin) ============ */}
+        {view === "archive" && (role === "pro" || role === "owner") && (
+          <>
+            <div className="sheet-head">
+              <div className="sheet-title">Past Pools</div>
+              <div className="sheet-deadline mono" style={{ color: "var(--muted)" }}>Admin · Golf shop only</div>
+            </div>
+            <p className="sheet-sub">Every finished pool, archived with its final standings the moment you start the next event's pool.</p>
+            <div className="settings-grid">
+              <section className="set-block">
+                <h3 className="set-title">Past pools</h3>
+                {pastResults.length === 0 && (
+                  <p className="set-sub">Finished pools are archived here automatically when you start the next event's pool — final standings included.</p>
+                )}
+                {pastResults.map((r) => {
+                  const key = r.id || r.pool_id;
+                  const open = expandedResult === key;
+                  const rows = Array.isArray(r.standings) ? r.standings : [];
+                  return (
+                    <div key={key} style={{ borderBottom: "1px dotted var(--paper-line)", padding: "8px 0" }}>
+                      <button className="remove-link" style={{ color: "var(--pine)", display: "flex", width: "100%", justifyContent: "space-between", textAlign: "left" }} onClick={() => setExpandedResult(open ? null : key)}>
+                        <span><strong>{r.event_name}</strong> · {rows.length} entries</span>
+                        <span className="mono" style={{ fontSize: 12 }}>
+                          {r.finalized_at ? new Date(r.finalized_at).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : ""} {open ? "▲" : "▼"}
+                        </span>
+                      </button>
+                      {open && (
+                        <div style={{ marginTop: 8 }}>
+                          {rows.slice(0, 20).map((row, i) => (
+                            <div className="payout-row" key={i} style={{ padding: "6px 0" }}>
+                              <span>
+                                <span className="mono" style={{ display: "inline-block", width: 34, color: "var(--muted)" }}>{row.pos}</span>
+                                {row.entry}
+                                <span style={{ color: "var(--muted)", marginLeft: 8, fontStyle: "italic", fontSize: 12 }}>{row.member}</span>
+                              </span>
+                              <span className="mono">{row.total === 0 ? "E" : row.total > 0 ? "+" + row.total : row.total}</span>
+                            </div>
+                          ))}
+                          {rows.length > 20 && <p className="seg-hint">…and {rows.length - 20} more entries</p>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </section>
+            </div>
           </>
         )}
 
