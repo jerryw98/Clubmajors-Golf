@@ -2356,8 +2356,10 @@ function ClubMajorsPrototype() {
         .tab:hover { color: var(--cream); }
         .tab.active { color: var(--cream); border-bottom-color: var(--brass-bright); }
         .tab:focus-visible { outline: 2px solid var(--brass-bright); outline-offset: -2px; }
-        .tab-group-label { align-self: center; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass-bright); opacity: 0.8; padding: 0 6px 2px 2px; white-space: nowrap; }
-        .tab-group-label.admin { padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.25); margin-left: 8px; }
+        /* group labels match the tab titles' size; brass color + no underline
+           keeps them reading as headings, not clickable tabs */
+        .tab-group-label { align-self: center; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brass-bright); opacity: 0.9; padding: 0 6px 2px 2px; white-space: nowrap; }
+        .tab-group-label.admin { padding-left: 16px; border-left: 1px solid rgba(255,255,255,0.25); margin-left: 10px; }
         .manage-wrap { display: none; } /* phone-only — desktop shows admin tabs inline */
 
         .shell { max-width: 920px; margin: 0 auto; padding: 28px 24px 56px; display: flex; flex-direction: column; min-height: calc(100vh - 170px); }
