@@ -2318,7 +2318,7 @@ function ClubMajorsPrototype() {
         .crest { width: 44px; height: 44px; color: var(--brass-bright); flex-shrink: 0; }
         .club-name { font-size: 23px; font-weight: 600; line-height: 1.15; }
         .club-sub { font-size: 12.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--brass-bright); margin-top: 4px; font-family: 'IBM Plex Mono', monospace; }
-        .tabs { display: flex; gap: 4px; margin-top: 18px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+        .tabs { display: flex; gap: 4px; margin-top: 18px; flex-wrap: wrap; }
         .tab {
           appearance: none; border: none; cursor: pointer;
           background: transparent; color: rgba(247,242,228,0.85);
@@ -2493,8 +2493,6 @@ function ClubMajorsPrototype() {
         .swatch.selected { border-color: var(--pine); box-shadow: 0 0 0 1.5px var(--pine); }
         .swatch:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
         .swatch-chip { display: block; height: auto; border-radius: 6px 6px 0 0; }
-        .swatch-chip span:first-child { flex: 3; }
-        .swatch-chip span:last-child { flex: 1; }
         .swatch-name { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); display: block; margin-top: 9px; padding: 0 4px; }
         .logo-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
         .logo-preview { width: 72px; height: 72px; background: var(--pine); color: var(--brass-bright); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -2561,9 +2559,9 @@ function ClubMajorsPrototype() {
           .set-block { padding: 16px 13px; }
           .swatches { grid-template-columns: 1fr 1fr; }
 
-          /* tabs: horizontal swipe, no visible scrollbar */
-          .tabs { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-          .tabs::-webkit-scrollbar { display: none; }
+          /* tabs wrap to a second row — every tab stays visible, nothing
+             hides off-screen (a hidden-scrollbar overflow once swallowed
+             the Account tab and with it the only sign-out button) */
           .tab { white-space: nowrap; padding: 10px 11px 12px; flex-shrink: 0; }
 
           /* inputs: 16px minimum so iOS Safari doesn't zoom on focus */
@@ -3810,13 +3808,9 @@ function ClubMajorsPrototype() {
                       onClick={() => setThemeId(t.id)}
                       aria-pressed={themeId === t.id}
                     >
-                      <span className="swatch-chip" style={{ display: "block", background: t.pine, borderBottom: "3px solid " + t.brassBright, padding: "10px 10px 8px", textAlign: "left" }}>
+                      <span className="swatch-chip" style={{ display: "block", background: t.pine, borderBottom: "3px solid " + t.brassBright, padding: "13px 10px 12px", textAlign: "left" }}>
                         <span style={{ display: "block", fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 13.5, color: "#F7F2E4", letterSpacing: "0.02em" }}>{clubName || "Your Club"}</span>
-                        <span className="mono" style={{ display: "block", fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: t.brassBright, marginTop: 3 }}>Est. 1921 · Member Pools</span>
-                        <span style={{ display: "flex", justifyContent: "space-between", marginTop: 7, background: t.board, padding: "4px 6px" }}>
-                          <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 9.5, color: "#F7F2E4" }}>1 · Breakfast Ball Boys</span>
-                          <span className="mono" style={{ fontSize: 9, color: t.brassBright }}>-31</span>
-                        </span>
+                        <span className="mono" style={{ display: "block", fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: t.brassBright, marginTop: 3 }}>{tagline.trim() || "Est. 1921 · Member Pools"}</span>
                       </span>
                       <span className="swatch-name">{t.name}</span>
                     </button>
@@ -3826,10 +3820,15 @@ function ClubMajorsPrototype() {
                     onClick={() => setThemeId("custom")}
                     aria-pressed={themeId === "custom"}
                   >
-                    <span className="swatch-chip">
-                      <span style={{ background: deriveCustomTheme(custom.primary, custom.accent).pine }} />
-                      <span style={{ background: deriveCustomTheme(custom.primary, custom.accent).brassBright }} />
-                    </span>
+                    {(() => {
+                      const ct = deriveCustomTheme(custom.primary, custom.accent);
+                      return (
+                        <span className="swatch-chip" style={{ display: "block", background: ct.pine, borderBottom: "3px solid " + ct.brassBright, padding: "13px 10px 12px", textAlign: "left" }}>
+                          <span style={{ display: "block", fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 13.5, color: "#F7F2E4", letterSpacing: "0.02em" }}>{clubName || "Your Club"}</span>
+                          <span className="mono" style={{ display: "block", fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: ct.brassBright, marginTop: 3 }}>{tagline.trim() || "Est. 1921 · Member Pools"}</span>
+                        </span>
+                      );
+                    })()}
                     <span className="swatch-name">Your Colors</span>
                   </button>
                 </div>
