@@ -2051,6 +2051,8 @@ function ClubMajorsPrototype() {
      update the UI. Publishing without payment is also blocked by RLS, so this
      is enforcement, not decoration. */
   const [payPending, setPayPending] = useState(false);
+  /* phone-only "Manage ▾" menu that holds the admin tabs (desktop shows them inline) */
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   useEffect(() => {
     if (!payPending || !dbPool) return;
     let cancelled = false;
@@ -2356,6 +2358,7 @@ function ClubMajorsPrototype() {
         .tab:focus-visible { outline: 2px solid var(--brass-bright); outline-offset: -2px; }
         .tab-group-label { align-self: center; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass-bright); opacity: 0.8; padding: 0 6px 2px 2px; white-space: nowrap; }
         .tab-group-label.admin { padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.25); margin-left: 8px; }
+        .manage-wrap { display: none; } /* phone-only — desktop shows admin tabs inline */
 
         .shell { max-width: 920px; margin: 0 auto; padding: 28px 24px 56px; display: flex; flex-direction: column; min-height: calc(100vh - 170px); }
         .shell > footer.powered { margin-top: auto; padding-top: 160px; }
@@ -2586,14 +2589,22 @@ function ClubMajorsPrototype() {
           .set-block { padding: 16px 13px; }
           .swatches { grid-template-columns: 1fr 1fr; }
 
-          /* tabs wrap to a second row — every tab stays visible, nothing
-             hides off-screen (a hidden-scrollbar overflow once swallowed
-             the Account tab and with it the only sign-out button) */
+          /* tabs wrap — every visible tab stays on screen, nothing hides in a
+             scrollbar-less overflow (that once swallowed the Account tab) */
           .tab { white-space: nowrap; padding: 10px 11px 12px; flex-shrink: 0; }
-          /* phone: the group labels become full-width section headers at the
-             same size as the tab titles, so the bar reads as two titled rows */
-          .tab-group-label { flex-basis: 100%; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; opacity: 0.9; padding: 8px 2px 0; }
-          .tab-group-label.admin { border-left: none; margin-left: 0; padding-left: 2px; border-top: 1px solid rgba(255,255,255,0.18); margin-top: 8px; padding-top: 12px; }
+          /* phone: the tab bar shows only the member tabs (one clean row — it
+             IS the member view); everything admin lives in the Manage ▾ menu */
+          .tab.admin-tab, .tab-group-label { display: none; }
+          .masthead-inner { position: relative; }
+          .masthead-inner:has(.manage-wrap) .club-line { padding-right: 112px; }
+          .manage-wrap { display: block; position: absolute; top: 2px; right: 0; z-index: 60; }
+          .manage-btn { appearance: none; cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cream); background: rgba(255,255,255,0.08); border: 1px solid rgba(247,242,228,0.35); border-radius: 6px; padding: 9px 12px; }
+          .manage-btn.active { border-color: var(--brass-bright); color: var(--brass-bright); }
+          .manage-overlay { position: fixed; inset: 0; z-index: 55; background: rgba(22,19,15,0.25); }
+          .manage-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; background: #FCF9EF; border: 1px solid var(--paper-line); border-radius: 8px; box-shadow: 0 10px 30px rgba(22,19,15,0.25); min-width: 210px; overflow: hidden; }
+          .manage-item { display: block; width: 100%; text-align: left; appearance: none; background: transparent; border: none; border-bottom: 1px dotted var(--paper-line); cursor: pointer; font-size: 12.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); padding: 14px 16px; }
+          .manage-item:last-child { border-bottom: none; }
+          .manage-item.active { color: var(--pine); background: #F3EDD9; }
 
           /* inputs: 16px minimum so iOS Safari doesn't zoom on focus */
           .club-name-input, .submit-bar input, .hex-input { font-size: 16px; }
@@ -2671,11 +2682,36 @@ function ClubMajorsPrototype() {
             </div>
           </div>
           )}
+          {(role === "pro" || role === "owner") && !platformLanding && (
+            <div className="manage-wrap">
+              <button
+                className={`manage-btn mono ${!["home", "picks", "board"].includes(view) ? "active" : ""}`}
+                onClick={() => setAdminMenuOpen((o) => !o)}
+                aria-haspopup="menu"
+                aria-expanded={adminMenuOpen}
+              >
+                Manage ▾
+              </button>
+              {adminMenuOpen && (
+                <>
+                  <div className="manage-overlay" onClick={() => setAdminMenuOpen(false)} />
+                  <div className="manage-menu" role="menu" aria-label="Golf shop admin">
+                    {NAV_TABS.filter((t) => !["home", "picks", "board", "landing"].includes(t.id)).map((t) => (
+                      <button key={t.id} role="menuitem" className={`manage-item mono ${view === t.id ? "active" : ""}`} onClick={() => { setView(t.id); setAdminMenuOpen(false); }}>
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           <nav className="tabs" aria-label="Pool sections">
             {NAV_TABS.map((t, i) => {
               const memberTab = ["home", "picks", "board"].includes(t.id);
               const isAdmin = role === "pro" || role === "owner";
-              const firstAdminTab = isAdmin && !memberTab && i > 0 && ["home", "picks", "board"].includes(NAV_TABS[i - 1].id);
+              const adminOnlyTab = isAdmin && !memberTab;
+              const firstAdminTab = adminOnlyTab && i > 0 && ["home", "picks", "board"].includes(NAV_TABS[i - 1].id);
               return (
                 <React.Fragment key={t.id}>
                   {isAdmin && i === 0 && memberTab && (
@@ -2688,7 +2724,7 @@ function ClubMajorsPrototype() {
                       Admin only ▸
                     </span>
                   )}
-                  <button className={`tab ${view === t.id ? "active" : ""}`} onClick={() => setView(t.id)}>
+                  <button className={`tab ${adminOnlyTab ? "admin-tab" : ""} ${view === t.id ? "active" : ""}`} onClick={() => setView(t.id)}>
                     {t.label}
                   </button>
                 </React.Fragment>
