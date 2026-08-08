@@ -1437,6 +1437,20 @@ let TIERS = DEMO ? DEMO_TIERS : BASE_TIERS;
 /* referral program is built but parked — links still track (?ref= lands in
    signups.referral) so old links keep working; the UI is hidden until launch */
 const REFERRAL_PROGRAM_LIVE = false;
+/* flips on once the Google Cloud OAuth client exists and the Supabase Google
+   provider is configured — the buttons below render only when true */
+const GOOGLE_SIGNIN_LIVE = false;
+
+function GoogleG({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </svg>
+  );
+}
 let PLAYER_INDEX = buildIndex(TIERS);
 
 /* Rules are generated as plain bullets from the pool format, then freely
@@ -1636,6 +1650,7 @@ function ClubMajorsPrototype() {
   const [signupReferral, setSignupReferral] = useState(() => { try { return localStorage.getItem("cm-ref") || ""; } catch (e) { return ""; } });
   const [refPromo, setRefPromo] = useState(""); // referral promotion copy — empty until the owner launches one
   const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
   const [signupState, setSignupState] = useState("idle");
   const role = profile ? profile.role : "guest";  // anonymous visitors are treated as members
 
@@ -1845,22 +1860,43 @@ function ClubMajorsPrototype() {
 
   async function handleSignup() {
     if (!signupClub.trim() || !signupEmail.trim()) return;
+    if (signupPassword.length < 8) { setSignupState("badpass"); return; }
     setSignupState("sending");
     try {
-      /* already registered? don't create a second club — send them to their own */
+      /* already registered? don't create a second club — point them at log in */
       try {
         const { data: exists } = await sb.rpc("email_registered", { p_email: signupEmail.trim() });
         if (exists === true) {
           try { localStorage.removeItem("cm-signup-club"); } catch (e) {}
-          await sb.auth.signInWithOtp({ email: signupEmail.trim(), options: { emailRedirectTo: window.location.origin } });
           setSignupState("exists");
           return;
         }
       } catch (e) { /* RPC missing pre-migration — fall through to normal signup */ }
       try { localStorage.setItem("cm-signup-club", signupClub.trim()); } catch (e) {}
-      await requestSignup(signupEmail.trim(), signupClub.trim(), signupReferral); setSignupState("sent");
+      try { localStorage.setItem("cm-remember", "1"); } catch (e) {}
+      const { data, error } = await sb.auth.signUp({
+        email: signupEmail.trim(),
+        password: signupPassword,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) throw error;
+      /* confirmations are ON in Supabase → normally "sent"; if autoconfirm is
+         ever enabled this signs straight in and the pending effect takes over */
+      setSignupState(data && data.session ? "done" : "sent");
     }
     catch (e) { setSignupState("error"); }
+  }
+
+  /* Google OAuth — same post-auth path as email: fresh users come back with
+     role=pending and the effect above creates the club from cm-signup-club */
+  async function handleGoogleAuth(mode) {
+    if (mode === "signup") {
+      if (!signupClub.trim()) { setSignupState("needclub"); return; }
+      try { localStorage.setItem("cm-signup-club", signupClub.trim()); } catch (e) {}
+    }
+    try { localStorage.setItem("cm-remember", "1"); } catch (e) {}
+    const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+    if (error) { if (mode === "signup") setSignupState("error"); else setAuthState("error"); }
   }
 
   const memberLink = dbClub ? `${window.location.origin}/?club=${dbClub.slug}` : "";
@@ -2394,6 +2430,14 @@ function ClubMajorsPrototype() {
         .tab-group-label { align-self: center; font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--brass-bright); opacity: 0.9; padding: 0 3px 2px 0; white-space: nowrap; }
         .tab-group-label.admin { padding-left: 10px; border-left: 1px solid rgba(255,255,255,0.25); margin-left: 5px; }
         .manage-wrap { display: none; } /* phone-only — desktop shows admin tabs inline */
+
+        /* ----- auth cards (standard login/signup layout) ----- */
+        .auth-btn-full { width: 100%; display: block; text-align: center; }
+        .auth-google { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; appearance: none; cursor: pointer; background: #FFF; border: 1.5px solid var(--paper-line); border-radius: 6px; padding: 12px 16px; font-family: 'Source Serif 4', Georgia, serif; font-size: 15px; font-weight: 600; color: var(--ink); }
+        .auth-google:hover { border-color: var(--brass); }
+        .auth-or { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--muted); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
+        .auth-or::before, .auth-or::after { content: ""; flex: 1; border-top: 1px solid var(--paper-line); }
+        .auth-links { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 
         .shell { max-width: 920px; margin: 0 auto; padding: 28px 24px 56px; display: flex; flex-direction: column; min-height: calc(100vh - 170px); }
         .shell-wide { max-width: 1240px; } /* Account view breathes wider than the 920 content column */
@@ -4162,39 +4206,63 @@ function ClubMajorsPrototype() {
               </div>
               <h3 className="set-title">Set up your club</h3>
               {signupState === "exists" ? (
-                <p className="set-sub" style={{ color: "var(--pine)" }}>
-                  You've already registered with <strong>{signupEmail}</strong> — no new club was created. We emailed you a
-                  sign-in link that takes you straight to your club. (Prefer a password? Use "Already set up? Sign in.")
-                </p>
+                <>
+                  <p className="set-sub" style={{ color: "var(--pine)" }}>
+                    You already have a ClubMajors account under <strong>{signupEmail}</strong> — no new club was created.
+                  </p>
+                  <button className="btn btn-primary auth-btn-full" onClick={() => { setAuthEmail(signupEmail); setSignupState("idle"); setView("signin"); }}>
+                    Log in instead →
+                  </button>
+                </>
               ) : signupState === "sent" ? (
                 <p className="set-sub" style={{ color: "var(--pine)" }}>
-                  Check <strong>{signupEmail}</strong> — we sent a sign-in link. Click it and your club will be ready to publish its first pool.
+                  Almost there — confirm your email. We sent a link to <strong>{signupEmail}</strong>; click it and your club is ready to publish its first pool.
                 </p>
               ) : (
                 <>
-                  <p className="set-sub">Run major-championship pools for your members. Enter your club and email — we'll set you up and send a one-time sign-in link.</p>
+                  <p className="set-sub">Run major-championship pools for your members. Members never need accounts — this login is for the golf shop only.</p>
                   <label className="field" style={{ marginTop: 0 }}>
                     <span className="field-k">Club name</span>
                     <input className="club-name-input" placeholder="e.g., Riverside Country Club"
                       value={signupClub} onChange={(e) => setSignupClub(e.target.value)} aria-label="Club name" />
                   </label>
-                  <label className="field">
+                  {GOOGLE_SIGNIN_LIVE && (
+                    <>
+                      <button className="auth-google" style={{ marginTop: 6 }} onClick={() => handleGoogleAuth("signup")}>
+                        <GoogleG /> Sign up with Google
+                      </button>
+                      {signupState === "needclub" && <p className="set-sub" style={{ marginTop: 8, color: "var(--under)" }}>Enter your club name first — we use it to set up your club's page.</p>}
+                      <div className="auth-or">or</div>
+                    </>
+                  )}
+                  <label className="field" style={GOOGLE_SIGNIN_LIVE ? { marginTop: 0 } : undefined}>
                     <span className="field-k">Your email (golf shop / pro)</span>
                     <input className="club-name-input" type="email" placeholder="pro@yourclub.com"
                       value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} aria-label="Email" />
                   </label>
+                  <label className="field">
+                    <span className="field-k">Password</span>
+                    <input className="club-name-input" type="password" placeholder="Min 8 characters"
+                      value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} aria-label="Password" />
+                  </label>
                   {/* Referred-by input removed Jul 2026 (Jerry) — ?ref= links still credit referrals via localStorage */}
-                  <div className="cta-row" style={{ marginTop: 16 }}>
-                    <button className="btn btn-primary" onClick={handleSignup} disabled={signupState === "sending"}>
-                      {signupState === "sending" ? "Setting up…" : "Create my club"}
-                    </button>
-                    <button className="btn btn-ghost" onClick={() => setView("signin")}>Already set up? Sign in</button>
-                  </div>
+                  <button className="btn btn-primary auth-btn-full" style={{ marginTop: 16 }} onClick={handleSignup}
+                    disabled={signupState === "sending" || !signupClub.trim() || !signupEmail.trim() || signupPassword.length < 8}>
+                    {signupState === "sending" ? "Setting up…" : "Create my club"}
+                  </button>
+                  {signupState === "badpass" && <p className="set-sub" style={{ marginTop: 12, color: "var(--under)" }}>Password needs at least 8 characters.</p>}
                   {signupState === "error" && <p className="set-sub" style={{ marginTop: 12, color: "var(--under)" }}>Something went wrong. Try again in a minute.</p>}
                   <p className="set-sub" style={{ marginTop: 14, fontSize: 12.5 }}>
                     By creating a club you agree to the <a href="/terms" target="_blank" rel="noopener" style={{ color: "var(--pine)" }}>Terms of Service</a> and{" "}
                     <a href="/privacy" target="_blank" rel="noopener" style={{ color: "var(--pine)" }}>Privacy Policy</a>.
                     Questions? <a href="mailto:support@clubmajorsgolf.com" style={{ color: "var(--pine)" }}>support@clubmajorsgolf.com</a>
+                  </p>
+                  <p className="set-sub" style={{ marginTop: 16, borderTop: "1px dotted var(--paper-line)", paddingTop: 14 }}>
+                    Already have an account?{" "}
+                    <button className="remove-link" style={{ color: "var(--pine)", textTransform: "none", letterSpacing: 0, fontSize: 13.5 }} onClick={() => setView("signin")}>
+                      Log in →
+                    </button>
                   </p>
                 </>
               )}
@@ -4299,6 +4367,14 @@ function ClubMajorsPrototype() {
                   <p className="set-sub">
                     For the golf shop only. Members don't sign in — they just make their picks.
                   </p>
+                  {GOOGLE_SIGNIN_LIVE && (
+                    <>
+                      <button className="auth-google" onClick={() => handleGoogleAuth("signin")}>
+                        <GoogleG /> Log in with Google
+                      </button>
+                      <div className="auth-or">or</div>
+                    </>
+                  )}
                   <input
                     className="club-name-input" type="email" placeholder="pro@yourclub.com"
                     value={authEmail} onChange={(e) => setAuthEmail(e.target.value)}
@@ -4315,29 +4391,27 @@ function ClubMajorsPrototype() {
                     <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ accentColor: "var(--pine)", width: 15, height: 15 }} />
                     Remember me on this device
                   </label>
-                  <div className="cta-row" style={{ marginTop: 14 }}>
-                    <button className="btn btn-primary" onClick={handlePasswordSignIn} disabled={authState === "signing" || !authEmail.trim() || !authPassword}>
-                      {authState === "signing" ? "Signing in…" : "Sign in"}
-                    </button>
-                    <button className="btn btn-ghost" onClick={handleSignIn} disabled={authState === "sending"}>
-                      {authState === "sending" ? "Sending…" : "Email me a sign-in link instead"}
-                    </button>
-                  </div>
+                  <button className="btn btn-primary auth-btn-full" style={{ marginTop: 14 }} onClick={handlePasswordSignIn} disabled={authState === "signing" || !authEmail.trim() || !authPassword}>
+                    {authState === "signing" ? "Logging in…" : "Log in"}
+                  </button>
                   {INVITE && (
                     <div className="cta-row" style={{ marginTop: 10 }}>
-                      <button className="btn btn-ghost" style={{ borderColor: "var(--brass)" }} onClick={handleInviteSignup} disabled={authState === "signing" || !authEmail.trim() || authPassword.length < 8}>
+                      <button className="btn btn-ghost auth-btn-full" style={{ borderColor: "var(--brass)" }} onClick={handleInviteSignup} disabled={authState === "signing" || !authEmail.trim() || authPassword.length < 8}>
                         New here? Create account &amp; join (password 8+ characters)
                       </button>
                     </div>
                   )}
-                  {authState === "badpass" && <p className="set-sub" style={{ marginTop: 12, color: "var(--under)" }}>Wrong email or password. First time using a password? Sign in with the email link once, then set a password under Account.</p>}
+                  {authState === "badpass" && <p className="set-sub" style={{ marginTop: 12, color: "var(--under)" }}>Wrong email or password. First time using a password? Use "Email me a sign-in link" once, then set a password under Account.</p>}
                   {authState === "sent" && <p className="set-sub" style={{ marginTop: 12, color: "var(--pine)" }}>Check your inbox — the link signs you straight in.</p>}
                   {authState === "error" && <p className="set-sub" style={{ marginTop: 12, color: "var(--under)" }}>Could not send the email. Check the address and try again in a minute.</p>}
-                  <p className="set-sub" style={{ marginTop: 10 }}>
+                  <div className="auth-links">
                     <button className="remove-link" style={{ color: "var(--muted)", textTransform: "none", letterSpacing: 0, fontSize: 13 }} onClick={handlePasswordReset}>
-                      Forgot password? Email me a reset link
+                      Forgot password?
                     </button>
-                  </p>
+                    <button className="remove-link" style={{ color: "var(--muted)", textTransform: "none", letterSpacing: 0, fontSize: 13 }} onClick={handleSignIn} disabled={authState === "sending"}>
+                      {authState === "sending" ? "Sending…" : "Email me a sign-in link"}
+                    </button>
+                  </div>
                   <p className="set-sub" style={{ marginTop: 18, borderTop: "1px dotted var(--paper-line)", paddingTop: 16 }}>
                     New to ClubMajors?{" "}
                     <button className="remove-link" style={{ color: "var(--pine)", textTransform: "none", letterSpacing: 0, fontSize: 13.5 }} onClick={() => setView("signup")}>
