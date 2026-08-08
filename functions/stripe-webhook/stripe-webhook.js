@@ -86,15 +86,20 @@ exports.handler = async (event) => {
           [clubId ? esc(clubId) + "::uuid" : "NULL", esc(plan), Number(obj.amount_total) || 0, esc(obj.currency || "usd"), esc(promo), esc(email), esc(obj.customer || null), esc(obj.id)].join(", ") +
           ") ON CONFLICT (stripe_session_id) DO NOTHING;"
       );
+      /* pools publish on payment, never before: flip the club's newest pool
+         to paid AND published here (service side, bypasses the RLS paywall).
+         The pro's checkout page polls for this flip; even if they close the
+         browser right after paying, the pool still goes live. */
+      const publishLatestPool =
+        "UPDATE public.pools SET paid = true, published = true WHERE id = (SELECT id FROM public.pools WHERE club_id = " + esc(clubId) + "::uuid ORDER BY created_at DESC LIMIT 1);";
       if (clubId && plan === "annual") {
         await sql("UPDATE public.clubs SET plan = 'annual', paid_until = now() + interval '1 year' WHERE id = " + esc(clubId) + "::uuid;");
+        await sql(publishLatestPool);
       } else if (clubId && plan === "season2026") {
         await sql("UPDATE public.clubs SET plan = 'season2026', paid_until = '2026-12-31T23:59:59+00:00' WHERE id = " + esc(clubId) + "::uuid;");
-        await sql("UPDATE public.pools SET paid = true WHERE id = (SELECT id FROM public.pools WHERE club_id = " + esc(clubId) + "::uuid ORDER BY created_at DESC LIMIT 1);");
+        await sql(publishLatestPool);
       } else if (clubId) {
-        await sql(
-          "UPDATE public.pools SET paid = true WHERE id = (SELECT id FROM public.pools WHERE club_id = " + esc(clubId) + "::uuid ORDER BY created_at DESC LIMIT 1);"
-        );
+        await sql(publishLatestPool);
       }
       return respond(200, { ok: true, recorded: plan });
     }

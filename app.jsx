@@ -1984,7 +1984,7 @@ function ClubMajorsPrototype() {
     adminFeeType: "flat",
     adminFeeVal: 100,
     payouts: [60, 30, 10],
-    billing: "single",
+    billing: "season", /* Season Pass preselected — best value and the pass we want to sell */
     published: false,
   });
 
@@ -2044,6 +2044,31 @@ function ClubMajorsPrototype() {
   const selectedEvent = EVENTS.find((e) => e.id === setup.eventId) || nextOpenEvent();
   const eventFee = PLATFORM_PRICING[selectedEvent.type];
   const payoutSum = setup.payouts.reduce((a, b) => a + (Number(b) || 0), 0);
+
+  /* Pools go live only AFTER Stripe confirms payment. The webhook flips the
+     pool to paid+published server-side the moment checkout completes; while
+     the pro's checkout is pending we poll the pool row to catch the flip and
+     update the UI. Publishing without payment is also blocked by RLS, so this
+     is enforcement, not decoration. */
+  const [payPending, setPayPending] = useState(false);
+  useEffect(() => {
+    if (!payPending || !dbPool) return;
+    let cancelled = false;
+    const t = setInterval(async () => {
+      try {
+        const { data } = await sb.from("pools").select("published, paid").eq("id", dbPool.id).single();
+        if (cancelled || !data) return;
+        if (data.published || data.paid) {
+          if (!data.published) { try { await savePool(dbPool.id, { published: true }); } catch (e) {} }
+          setDbPool((p) => (p ? { ...p, published: true, paid: data.paid } : p));
+          setSetup((s) => ({ ...s, published: true }));
+          setPayPending(false);
+        }
+      } catch (e) {}
+    }, 4000);
+    return () => { cancelled = true; clearInterval(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payPending, dbPool && dbPool.id]);
   /* Platform fee already covered? Single-event pools carry paid=true once the
      Stripe webhook lands; annual/season passes cover every pool while active.
      Editing a paid pool must never route the pro through checkout again. */
@@ -2329,6 +2354,8 @@ function ClubMajorsPrototype() {
         .tab:hover { color: var(--cream); }
         .tab.active { color: var(--cream); border-bottom-color: var(--brass-bright); }
         .tab:focus-visible { outline: 2px solid var(--brass-bright); outline-offset: -2px; }
+        .tab-group-label { align-self: center; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass-bright); opacity: 0.8; padding: 0 6px 2px 2px; white-space: nowrap; }
+        .tab-group-label.admin { padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.25); margin-left: 8px; }
 
         .shell { max-width: 920px; margin: 0 auto; padding: 28px 24px 56px; display: flex; flex-direction: column; min-height: calc(100vh - 170px); }
         .shell > footer.powered { margin-top: auto; padding-top: 160px; }
@@ -2563,6 +2590,10 @@ function ClubMajorsPrototype() {
              hides off-screen (a hidden-scrollbar overflow once swallowed
              the Account tab and with it the only sign-out button) */
           .tab { white-space: nowrap; padding: 10px 11px 12px; flex-shrink: 0; }
+          /* phone: the group labels become full-width section headers at the
+             same size as the tab titles, so the bar reads as two titled rows */
+          .tab-group-label { flex-basis: 100%; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; opacity: 0.9; padding: 8px 2px 0; }
+          .tab-group-label.admin { border-left: none; margin-left: 0; padding-left: 2px; border-top: 1px solid rgba(255,255,255,0.18); margin-top: 8px; padding-top: 12px; }
 
           /* inputs: 16px minimum so iOS Safari doesn't zoom on focus */
           .club-name-input, .submit-bar input, .hex-input { font-size: 16px; }
@@ -2648,12 +2679,12 @@ function ClubMajorsPrototype() {
               return (
                 <React.Fragment key={t.id}>
                   {isAdmin && i === 0 && memberTab && (
-                    <span className="tab-group-label mono" title="Members only see these three tabs" style={{ alignSelf: "center", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brass-bright)", opacity: 0.8, padding: "0 6px 2px 2px", whiteSpace: "nowrap" }}>
+                    <span className="tab-group-label mono" title="Members only see these three tabs">
                       Member view ▸
                     </span>
                   )}
                   {firstAdminTab && (
-                    <span className="tab-group-label mono" title="Only golf shop admins see these tabs — members never do" style={{ alignSelf: "center", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brass-bright)", opacity: 0.8, padding: "0 6px 2px 14px", borderLeft: "1px solid rgba(255,255,255,0.25)", marginLeft: 8, whiteSpace: "nowrap" }}>
+                    <span className="tab-group-label admin mono" title="Only golf shop admins see these tabs — members never do">
                       Admin only ▸
                     </span>
                   )}
@@ -3554,7 +3585,11 @@ function ClubMajorsPrototype() {
                               max_entries: setup.maxEntries === "unlimited" ? null : Number(setup.maxEntries),
                               member_edits: !!setup.memberEdits,
                             };
-                            const changingEvent = dbPool.event_name && dbPool.event_name !== evName && entries.length > 0;
+                            /* Any event change to a LIVE pool forks a fresh draft —
+                               never edit the members' published pool onto a new event
+                               before that event's fee is paid (with 0 entries the old
+                               code edited in place, putting an unpaid event live). */
+                            const changingEvent = dbPool.published && dbPool.event_name && dbPool.event_name !== evName;
                             if (changingEvent) {
                               /* the new event gets its own deadline and fresh
                                  rules — nothing inherited from the old pool */
@@ -3563,8 +3598,10 @@ function ClubMajorsPrototype() {
                               }
                               poolFields.rules = generateRules(setup).map((l) => "\u2022 " + l).join("\n");
                               /* archive the final leaderboard before moving on, so the
-                                 shop can pull up past results any time */
+                                 shop can pull up past results any time (only when the
+                                 pool actually had entries — empty boards make junk rows) */
                               try {
+                                if (!entries.length) throw new Error("no entries to archive");
                                 const standings = board.map((b) => ({
                                   pos: b.posLabel,
                                   entry: b.entry,
@@ -3600,8 +3637,11 @@ function ClubMajorsPrototype() {
                                 setLocked(new Date(np.deadline).getTime() < Date.now());
                                 setSaveMsg("New pool created for " + evName + " — the previous pool and its entries are preserved.");
                               } catch (err) {
-                                try { await savePool(dbPool.id, { ...poolFields, tiebreaker_on: !!setup.tiebreakerOn }); }
-                                catch (err2) { await savePool(dbPool.id, poolFields); }
+                                /* NEVER fall back to editing the live pool onto the new
+                                   event — that would put an unpaid event in front of
+                                   members. Fail loudly and keep the old pool intact. */
+                                setSaveMsg("Could not start the new event's pool: " + ((err && err.message) || err) + " — your current pool is untouched. Try again or email support@clubmajorsgolf.com.");
+                                return;
                               }
                             } else {
                               try { await savePool(dbPool.id, { ...poolFields, tiebreaker_on: !!setup.tiebreakerOn }); }
@@ -3968,34 +4008,51 @@ function ClubMajorsPrototype() {
           const plan = setup.billing;
           const fee = plan === "annual" ? ANNUAL_PRICE : plan === "season" ? SEASON_PRICE : eventFee;
           const payUrl = stripeCheckoutUrl(plan, dbClub, profile && profile.email, selectedEvent.type);
-          async function payAndPublish() {
-            if (plan === "season" && !payUrl) {
-              alert("The 2026 Season Pass checkout isn't configured yet — choose another plan or try again shortly.");
-              return;
-            }
-            /* publish FIRST, loudly — a silent failure here once let pros pay
-               for pools that never reached the database */
+          async function payNow() {
+            /* pay FIRST — the pool publishes only after Stripe confirms.
+               The webhook flips it live server-side; the polling effect
+               catches the flip even if this tab sits in the background. */
             if (!dbPool) {
-              alert("No pool draft found to publish — go back to Pool Setup and press Review & publish again.");
+              alert("No pool draft found — go back to Pool Setup and press Review & publish again.");
               return;
             }
-            try {
-              await savePool(dbPool.id, { published: true, plan });
-              setDbPool((p) => (p ? { ...p, published: true, plan } : p));
-            } catch (e) {
-              alert("The pool could not be published: " + ((e && e.message) || e) + "\nNo charge was made — please try again or contact support.");
+            if (!payUrl) {
+              alert("Card checkout is temporarily unavailable — email support@clubmajorsgolf.com and we'll get your pool live.");
               return;
             }
-            setSetup((s) => ({ ...s, published: true }));
-            if (payUrl) window.open(payUrl, "_blank", "noopener");
+            try { await savePool(dbPool.id, { plan }); } catch (e) {}
+            setPayPending(true);
+            window.open(payUrl, "_blank", "noopener");
           }
           return (
             <div className="settings-grid" style={{ maxWidth: 560, margin: "0 auto" }}>
               <section className="set-block">
                 <h3 className="set-title">Checkout — platform fee</h3>
-                {!setup.published ? (
+                {setup.published ? (
                   <>
-                    <p className="set-sub">Confirm the fee your club pays ClubMajors to run this pool. Members' entry fees are collected separately by the golf shop. Have a ClubMajors promo code? You can enter it on the payment page.</p>
+                    <h3 className="set-title" style={{ borderColor: "var(--brass)" }}>Pool published 🎉</h3>
+                    <p className="set-sub">Payment confirmed — your members can enter now. Share this link with them; it opens straight to your club's pool:</p>
+                    <div className="mono" style={{ fontSize: 15, color: "var(--pine)", background: "#FCF9EF", border: "1px solid var(--paper-line)", padding: "12px 14px", userSelect: "all", wordBreak: "break-all" }}>{memberLink}</div>
+                    <div className="cta-row" style={{ marginTop: 16 }}>
+                      <button className="btn btn-primary" onClick={() => setView("picks")}>Preview member picksheet</button>
+                    </div>
+                  </>
+                ) : payPending ? (
+                  <>
+                    <p className="set-sub">Complete your payment in the Stripe tab that just opened. The moment it goes through, this page confirms automatically and your pool goes live — usually within a few seconds.</p>
+                    <div className="facts" style={{ border: "1px solid var(--paper-line)", gridTemplateColumns: "1fr 1fr" }}>
+                      <div className="fact"><div className="fact-k">Status</div><div className="fact-v">Waiting for Stripe…</div></div>
+                      <div className="fact"><div className="fact-k">Total due</div><div className="fact-v mono">${fee}{plan === "annual" ? "/yr" : ""}</div></div>
+                    </div>
+                    <div className="cta-row" style={{ marginTop: 18 }}>
+                      <button className="btn btn-ghost" onClick={() => window.open(payUrl, "_blank", "noopener")}>Reopen payment page</button>
+                      <button className="btn btn-ghost" onClick={() => setView("setup")}>Back to setup</button>
+                    </div>
+                    <p className="pro-note" style={{ marginTop: 16 }}>Paid but not seeing a confirmation after a minute? Email <a href="mailto:support@clubmajorsgolf.com" style={{ color: "var(--pine)" }}>support@clubmajorsgolf.com</a> — nothing is lost, we'll publish it for you.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="set-sub">Confirm the fee your club pays ClubMajors to run this pool. Members' entry fees are collected separately by the golf shop. Have a ClubMajors promo code? You can enter it on the payment page. Your pool publishes the moment payment is confirmed.</p>
                     <div className="facts" style={{ border: "1px solid var(--paper-line)", gridTemplateColumns: "1fr 1fr" }}>
                       <div className="fact"><div className="fact-k">Club</div><div className="fact-v">{dbClub ? dbClub.name : clubName}</div></div>
                       <div className="fact"><div className="fact-k">Plan</div><div className="fact-v">{plan === "annual" ? "Annual Pass" : plan === "season" ? "2026 Season Pass" : PRICING_LABEL[selectedEvent.type]}</div></div>
@@ -4003,26 +4060,16 @@ function ClubMajorsPrototype() {
                       <div className="fact"><div className="fact-k">Total due</div><div className="fact-v mono">${fee}{plan === "annual" ? "/yr" : ""}</div></div>
                     </div>
                     <div className="cta-row" style={{ marginTop: 18 }}>
-                      <button className="btn btn-primary" onClick={payAndPublish}>
-                        {payUrl ? `Pay $${fee} by card` : `Publish pool ($${fee} invoice)`}
+                      <button className="btn btn-primary" onClick={payNow} disabled={!payUrl}>
+                        {`Pay $${fee} by card`}
                       </button>
                       <button className="btn btn-ghost" onClick={() => setView("setup")}>Back to setup</button>
                     </div>
                     {payUrl ? (
                       <p className="pro-note" style={{ marginTop: 16 }}>Opens Stripe's secure checkout in a new tab. Your card details go straight to Stripe — ClubMajors never sees them. By paying you agree to the <a href="/terms" target="_blank" rel="noopener" style={{ color: "var(--pine)" }}>Terms of Service</a>.</p>
                     ) : (
-                      <p className="pro-note" style={{ marginTop: 16 }}>Card checkout turns on once Stripe is connected. For now the pool publishes and the fee is billed by invoice.</p>
+                      <p className="pro-note" style={{ marginTop: 16 }}>Card checkout is temporarily unavailable — email <a href="mailto:support@clubmajorsgolf.com" style={{ color: "var(--pine)" }}>support@clubmajorsgolf.com</a> and we'll get your pool live.</p>
                     )}
-                  </>
-                ) : (
-                  <>
-                    <h3 className="set-title" style={{ borderColor: "var(--brass)" }}>Pool published 🎉</h3>
-                    <p className="set-sub">Your members can enter now. Share this link with them — it opens straight to your club's pool:</p>
-                    <div className="mono" style={{ fontSize: 15, color: "var(--pine)", background: "#FCF9EF", border: "1px solid var(--paper-line)", padding: "12px 14px", userSelect: "all", wordBreak: "break-all" }}>{memberLink}</div>
-                    <div className="cta-row" style={{ marginTop: 16 }}>
-                      <button className="btn btn-primary" onClick={() => setView("picks")}>Preview member picksheet</button>
-                      {payUrl && <button className="btn btn-ghost" onClick={() => window.open(payUrl, "_blank", "noopener")}>Pay fee now</button>}
-                    </div>
                   </>
                 )}
               </section>

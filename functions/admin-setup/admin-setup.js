@@ -102,17 +102,36 @@ exports.handler = async (event) => {
      step lived here. Its ILIKE '%open%' match also hit later events ("3M
      Open"…) and silently reset their deadlines to July 16 on every rerun. */
 
-  await step("pools policies: club admins can create, see, and publish their club's pools", async () => {
-    /* the app inserts a draft on first publish, reloads it (unpublished), and
-       flips published=true at checkout; the original hand-made policies
-       (predating this file) provably missed at least part of that path */
+  await step("paywall backfill: pools published before the paywall count as paid", async () => {
+    /* One-time grandfather clause (idempotent). Pools that went live under the
+       old publish-first flow (the 2026 test fleet + pre-launch trials) must not
+       start failing the paywall's WITH CHECK when their pros edit settings. */
+    const r = await sql(`UPDATE public.pools SET paid = true WHERE published = true AND paid = false RETURNING id;`);
+    return "grandfathered: " + ((r && JSON.parse(r).length) || 0) + " pool(s)";
+  });
+
+  await step("pools policies: club admins manage their pools; publishing requires payment (paywall)", async () => {
+    /* Pros can create drafts and edit their pools, but a row may only end up
+       published=true when the pool is paid OR the club holds an active pass
+       (paid_until in the future). The Stripe webhook publishes via the mgmt
+       API (bypasses RLS), so the legit publish path is unaffected — this
+       blocks console-savvy pros from flipping published themselves. Owners
+       stay exempt (support override). The legacy permissive ALL policy is
+       dropped: it OR-ed with these and would have waved the paywall through. */
     await sql(`
+      DROP POLICY IF EXISTS "pro or owner manages pools" ON public.pools;
       DROP POLICY IF EXISTS pools_admin_insert ON public.pools;
       CREATE POLICY pools_admin_insert ON public.pools FOR INSERT
-        WITH CHECK (EXISTS (
-          SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
-            AND (pr.role = 'owner' OR (pr.role = 'pro' AND pr.club_id = pools.club_id))
-        ));
+        WITH CHECK (
+          EXISTS (SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid() AND pr.role = 'owner')
+          OR (
+            EXISTS (SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
+                      AND pr.role = 'pro' AND pr.club_id = pools.club_id)
+            AND (published = false OR paid = true OR EXISTS (
+              SELECT 1 FROM public.clubs c WHERE c.id = pools.club_id AND c.paid_until > now()
+            ))
+          )
+        );
       DROP POLICY IF EXISTS pools_admin_select ON public.pools;
       CREATE POLICY pools_admin_select ON public.pools FOR SELECT
         USING (published = true OR EXISTS (
@@ -125,12 +144,18 @@ exports.handler = async (event) => {
           SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
             AND (pr.role = 'owner' OR (pr.role = 'pro' AND pr.club_id = pools.club_id))
         ))
-        WITH CHECK (EXISTS (
-          SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
-            AND (pr.role = 'owner' OR (pr.role = 'pro' AND pr.club_id = pools.club_id))
-        ));
+        WITH CHECK (
+          EXISTS (SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid() AND pr.role = 'owner')
+          OR (
+            EXISTS (SELECT 1 FROM public.profiles pr WHERE pr.id = auth.uid()
+                      AND pr.role = 'pro' AND pr.club_id = pools.club_id)
+            AND (published = false OR paid = true OR EXISTS (
+              SELECT 1 FROM public.clubs c WHERE c.id = pools.club_id AND c.paid_until > now()
+            ))
+          )
+        );
     `);
-    return "pools admin insert/select/update policies in place";
+    return "pools policies in place — published=true requires paid pool, active pass, or owner";
   });
 
   await step("pool format columns: scoring/cut/tiers/entries persist per pool", async () => {
