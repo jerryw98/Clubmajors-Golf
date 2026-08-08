@@ -110,6 +110,61 @@ exports.handler = async (event) => {
     return "grandfathered: " + ((r && JSON.parse(r).length) || 0) + " pool(s)";
   });
 
+  await step("fleet redeal: fix test entries that hold multiple golfers from one tier (test env only)", async () => {
+    /* TEMPORARY, gated like test-account seeding. The Aug-2026 fleet seeder
+       sampled golfers uniformly from the whole field instead of one per tier;
+       this re-deals only the VIOLATING entries against the current odds tiers
+       and freezes those tiers onto the fleet pools. Idempotent: valid entries
+       are never touched, so reruns are no-ops. Remove with the seeding step. */
+    if (process.env.SEED_TEST_ACCOUNTS !== "1") return "skipped (SEED_TEST_ACCOUNTS != 1)";
+    const q = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+    const norm = (s) => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ø/gi, "o").toLowerCase().replace(/\(a\)/g, "").replace(/[^a-z\s]/g, "").trim();
+    const oddsResp = await (await fetch("https://clubmajorsgolf.com/.netlify/functions/leaderboard?view=odds")).json();
+    const odds = (oddsResp && Array.isArray(oddsResp.odds) ? oddsResp.odds : []);
+    if (odds.length < 40) return "skipped — odds board too sparse to tier (" + odds.length + ")";
+    const seen = new Set(); const field = [];
+    odds.forEach((o) => {
+      const name = ((o.firstName || "") + " " + (o.lastName || "")).trim();
+      const key = norm(name);
+      if (!name || seen.has(key)) return;
+      seen.add(key);
+      field.push({ id: "f_" + key.replace(/\s+/g, ""), name, odds: o.odds });
+    });
+    field.sort((a, b) => a.odds - b.odds);
+    const sizes = [8, 10, 12, 14, 16];
+    const labels = ["I", "II", "III", "IV", "V", "VI"];
+    const tiers = []; let idx = 0;
+    for (let t = 0; t < 5; t++) { tiers.push({ label: labels[t], players: field.slice(idx, idx + sizes[t]).map((f) => ({ id: f.id, name: f.name, odds: (f.odds > 0 ? "+" : "") + f.odds })) }); idx += sizes[t]; }
+    tiers.push({ label: "VI", players: field.slice(idx).map((f) => ({ id: f.id, name: f.name, odds: (f.odds > 0 ? "+" : "") + f.odds })) });
+    const evName = String(oddsResp.eventName || "");
+    await sql("ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS tiers jsonb;"); /* order-proof: column also added by the format step */
+    const pools = JSON.parse(await sql(
+      "SELECT p.id, p.tiers IS NULL AS no_snap FROM public.pools p WHERE p.published = true AND p.event_name = " + q(evName) + ";"
+    ));
+    if (!pools.length) return "no published pools for the current odds event (" + evName + ")";
+    const poolIds = pools.map((p) => "'" + p.id + "'::uuid").join(",");
+    for (const p of pools.filter((x) => x.no_snap)) {
+      await sql("UPDATE public.pools SET tiers = " + q(JSON.stringify(tiers)) + "::jsonb WHERE id = '" + p.id + "'::uuid AND tiers IS NULL;");
+    }
+    const entries = JSON.parse(await sql("SELECT id, picks FROM public.entries WHERE pool_id IN (" + poolIds + ");"));
+    const tierIdSets = tiers.map((t) => new Set(t.players.map((pl) => pl.id)));
+    const violates = (picks) => {
+      const golfers = (picks || []).filter((x) => typeof x === "string" && x.indexOf(":") === -1);
+      return !tierIdSets.every((set) => golfers.filter((g) => set.has(g)).length === 1);
+    };
+    const bad = entries.filter((e) => violates(e.picks));
+    if (!bad.length) return "all " + entries.length + " entries already one-per-tier; snapshot on " + pools.length + " pool(s)";
+    let seed = 42;
+    const rand = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    const rows = bad.map((e) => {
+      const extras = (e.picks || []).filter((x) => typeof x === "string" && x.indexOf(":") !== -1);
+      const newPicks = tiers.map((t) => t.players[Math.floor(rand() * t.players.length)].id).concat(extras);
+      return "('" + e.id + "'::uuid, " + q(JSON.stringify(newPicks)) + "::jsonb)";
+    });
+    await sql("UPDATE public.entries e SET picks = v.picks FROM (VALUES " + rows.join(",") + ") AS v(id, picks) WHERE e.id = v.id;");
+    return "re-dealt " + bad.length + " of " + entries.length + " entries one-per-tier for " + evName + "; tier snapshot frozen on " + pools.length + " pool(s)";
+  });
+
   await step("pools policies: club admins manage their pools; publishing requires payment (paywall)", async () => {
     /* Pros can create drafts and edit their pools, but a row may only end up
        published=true when the pool is paid OR the club holds an active pass
@@ -165,6 +220,7 @@ exports.handler = async (event) => {
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS scoring text;
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS cut_rule text;
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS tier_method text;
+      ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS tiers jsonb; -- frozen tier snapshot: [{label, players:[{id,name,odds}]}]
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS max_entries integer; -- integer in prod; NULL = unlimited
       ALTER TABLE public.pools ADD COLUMN IF NOT EXISTS member_edits boolean;
     `);
@@ -372,14 +428,27 @@ exports.handler = async (event) => {
       CREATE OR REPLACE FUNCTION public.submit_entry(p_pool_id uuid, p_entry_name text, p_member_name text, p_picks jsonb)
        RETURNS TABLE(entry_id uuid, edit_token text) LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'extensions'
       AS $function$
-      declare v_token text; v_id uuid; v_deadline timestamptz; v_published boolean; v_max text; v_count int;
+      declare v_token text; v_id uuid; v_deadline timestamptz; v_published boolean; v_max text; v_count int; v_tiers jsonb; v_tier jsonb; v_c int;
       begin
-        select deadline, published, max_entries into v_deadline, v_published, v_max from pools where id = p_pool_id;
+        select deadline, published, max_entries, tiers into v_deadline, v_published, v_max, v_tiers from pools where id = p_pool_id;
         if v_deadline is null then raise exception 'pool not found'; end if;
         if not v_published then raise exception 'pool not open'; end if;
         if now() >= v_deadline then raise exception 'picks are locked'; end if;
         if jsonb_typeof(p_picks) <> 'array' or jsonb_array_length(p_picks) < 6 or jsonb_array_length(p_picks) > 8 then
           raise exception 'need 6 picks (plus optional tiebreaker and team pick)'; end if;
+        /* one and ONLY one golfer per tier, validated against the pool's frozen
+           tier snapshot — the UI enforces this too, but the database is the
+           backstop nobody can script around */
+        if v_tiers is not null and jsonb_typeof(v_tiers) = 'array' and jsonb_array_length(v_tiers) = 6 then
+          for v_tier in select * from jsonb_array_elements(v_tiers) loop
+            select count(*) into v_c
+              from jsonb_array_elements_text(p_picks) pk
+              where exists (select 1 from jsonb_array_elements(v_tier->'players') pl where pl->>'id' = pk.value);
+            if v_c <> 1 then
+              raise exception 'Pick exactly one golfer from tier % — this entry has %.', v_tier->>'label', v_c;
+            end if;
+          end loop;
+        end if;
         /* per-member entry limit, matched on normalized member name */
         if v_max is not null and v_max <> 'unlimited' and v_max ~ '^[0-9]+$' then
           select count(*) into v_count from entries

@@ -1434,6 +1434,9 @@ const DEMO_POOL = { id: "demo-pool", club_id: "demo-club", event_name: "The Mast
 const DEMO_ENTRIES = [{"id": "demo-e1", "entry_name": "Green Jackets Only", "member_name": "Tommy R.", "picks": ["d_rorymcilroy", "d_tyrrellhatton", "d_cameronyoung", "d_justinrose", "d_garywoodland", "d_johnnykeefer", "tb:274"]}, {"id": "demo-e2", "entry_name": "Pimento Cheese Party", "member_name": "Linda K.", "picks": ["d_scottiescheffler", "d_russellhenley", "d_cameronyoung", "d_justinrose", "d_haotongli", "d_briancampbell", "tb:277"]}, {"id": "demo-e3", "entry_name": "Caddyshack Revival", "member_name": "Pete L.", "picks": ["d_rorymcilroy", "d_samburns", "d_mattfitzpatrick", "d_justinrose", "d_adamscott", "d_michaelbrennan", "tb:275"]}, {"id": "demo-e4", "entry_name": "The Sandbaggers", "member_name": "Mary Lou T.", "picks": ["d_scottiescheffler", "d_russellhenley", "d_mattfitzpatrick", "d_justinrose", "d_garywoodland", "d_jacksonherringtona", "tb:274"]}, {"id": "demo-e5", "entry_name": "The Azalea Aces", "member_name": "Margaret W.", "picks": ["d_scottiescheffler", "d_samburns", "d_patrickreed", "d_jakeknapp", "d_samstevens", "d_mattmccarty", "tb:275"]}, {"id": "demo-e6", "entry_name": "Amen Corner Crew", "member_name": "Dave P.", "picks": ["d_rorymcilroy", "d_maxhoma", "d_keeganbradley", "d_nicktaylor", "d_adamscott", "d_michaelbrennan", "tb:272"]}, {"id": "demo-e7", "entry_name": "Butler Cabin Bound", "member_name": "Cheryl D.", "picks": ["d_rorymcilroy", "d_hidekimatsuyama", "d_patrickreed", "d_alexnoren", "d_jacobbridgeman", "d_rasmushojgaard", "tb:276"]}, {"id": "demo-e8", "entry_name": "Rae's Creek Waders", "member_name": "Sally P.", "picks": ["d_collinmorikawa", "d_tyrrellhatton", "d_jjspaun", "d_alexnoren", "d_jacobbridgeman", "d_michaelbrennan", "tb:276"]}, {"id": "demo-e9", "entry_name": "Sunday Red", "member_name": "Marcus T.", "picks": ["d_xanderschauffele", "d_jordanspieth", "d_wyndhamclark", "d_nicktaylor", "d_siwookim", "d_briancampbell", "tb:278"]}, {"id": "demo-e10", "entry_name": "The 19th Hole", "member_name": "Barb S.", "picks": ["d_cameronsmith", "d_brookskoepka", "d_patrickreed", "d_maverickmcnealy", "d_ryangerard", "d_mattmccarty", "tb:275"]}, {"id": "demo-e11", "entry_name": "Two Putts Max", "member_name": "Gene O.", "picks": ["d_collinmorikawa", "d_patrickcantlay", "d_mattfitzpatrick", "d_coreyconners", "d_siwookim", "d_mattmccarty", "tb:279"]}, {"id": "demo-e12", "entry_name": "Dawn Patrol", "member_name": "Hank M.", "picks": ["d_justinthomas", "d_shanelowry", "d_cameronyoung", "d_brianharman", "d_garywoodland", "d_briancampbell", "tb:277"]}, {"id": "demo-e13", "entry_name": "Fore! Please", "member_name": "Bill N.", "picks": ["d_ludvigaberg", "d_jasonday", "d_akshaybhatia", "d_chrisgotterup", "d_samstevens", "d_rasmushojgaard", "tb:273"]}, {"id": "demo-e14", "entry_name": "Magnolia Lane Express", "member_name": "Chip W.", "picks": ["d_rorymcilroy", "d_jordanspieth", "d_bengriffin", "d_coreyconners", "d_harryhall", "d_fredcouples", "tb:271"]}, {"id": "demo-e15", "entry_name": "Mulligan's Law", "member_name": "Patty G.", "picks": ["d_viktorhovland", "d_tommyfleetwood", "d_andrewnovak", "d_jakeknapp", "d_siwookim", "d_marcopenge", "tb:280"]}, {"id": "demo-e16", "entry_name": "Tea Olive Society", "member_name": "Nancy F.", "picks": ["d_viktorhovland", "d_maxhoma", "d_robertmacintyre", "d_nicolaihojgaard", "d_aaronrai", "d_mattmccarty", "tb:280"]}, {"id": "demo-e17", "entry_name": "Eagle Hunters", "member_name": "Frank D.", "picks": ["d_jonrahm", "d_patrickcantlay", "d_harrisenglish", "d_dustinjohnson", "d_zachjohnson", "d_vijaysingh", "tb:279"]}, {"id": "demo-e18", "entry_name": "Three Off The Tee", "member_name": "Walt B.", "picks": ["d_ludvigaberg", "d_maxhoma", "d_wyndhamclark", "d_sergiogarcia", "d_kurtkitayama", "d_josemariaolazabal", "tb:283"]}, {"id": "demo-e19", "entry_name": "The Grill Room Gang", "member_name": "Susan H.", "picks": ["d_jonrahm", "d_tommyfleetwood", "d_seppstraka", "d_ryanfox", "d_kurtkitayama", "d_marcopenge", "tb:281"]}, {"id": "demo-e20", "entry_name": "Hogan's Alley Cats", "member_name": "Ernie V.", "picks": ["d_xanderschauffele", "d_hidekimatsuyama", "d_akshaybhatia", "d_maxgreyserman", "d_aaronrai", "d_ethanfanga", "tb:282"]}, {"id": "demo-e21", "entry_name": "Bomb & Gouge", "member_name": "Rick S.", "picks": ["d_brysondechambeau", "d_brookskoepka", "d_seppstraka", "d_dustinjohnson", "d_ryangerard", "d_marcopenge", "tb:270"]}, {"id": "demo-e22", "entry_name": "Grip It & Sip It", "member_name": "Doug F.", "picks": ["d_brysondechambeau", "d_jasonday", "d_keeganbradley", "d_aldrichpotgieter", "d_samivalimaki", "d_mikeweir", "tb:268"]}, {"id": "demo-e23", "entry_name": "Pin High Society", "member_name": "Al G.", "picks": ["d_viktorhovland", "d_tyrrellhatton", "d_wyndhamclark", "d_maxgreyserman", "d_adamscott", "d_johnnykeefer", "tb:284"]}, {"id": "demo-e24", "entry_name": "Birdie Machine", "member_name": "Rhonda C.", "picks": ["d_rorymcilroy", "d_russellhenley", "d_harrisenglish", "d_jakeknapp", "d_kristofferreitan", "d_michaelbrennan", "tb:272"]}, {"id": "demo-e25", "entry_name": "The Yips", "member_name": "Stu M.", "picks": ["d_justinthomas", "d_jordanspieth", "d_harrisenglish", "d_maverickmcnealy", "d_nicoechavarria", "d_jacksonherringtona", "tb:288"]}, {"id": "demo-e26", "entry_name": "Fried Egg Lies", "member_name": "Carol B.", "picks": ["d_cameronsmith", "d_brookskoepka", "d_bengriffin", "d_sergiogarcia", "d_jacobbridgeman", "d_rasmushojgaard", "tb:278"]}, {"id": "demo-e27", "entry_name": "Mashie Niblicks", "member_name": "Herb S.", "picks": ["d_rorymcilroy", "d_patrickcantlay", "d_sungjaeim", "d_alexnoren", "d_samivalimaki", "d_mikeweir", "tb:284"]}, {"id": "demo-e28", "entry_name": "Downhill Sliders", "member_name": "Vic R.", "picks": ["d_viktorhovland", "d_minwoolee", "d_robertmacintyre", "d_coreyconners", "d_aaronrai", "d_rasmushojgaard", "tb:279"]}, {"id": "demo-e29", "entry_name": "Texas Wedge", "member_name": "Dottie H.", "picks": ["d_ludvigaberg", "d_minwoolee", "d_akshaybhatia", "d_maverickmcnealy", "d_kurtkitayama", "d_rasmushojgaard", "tb:277"]}, {"id": "demo-e30", "entry_name": "The Lumberjacks", "member_name": "Cal N.", "picks": ["d_ludvigaberg", "d_minwoolee", "d_jjspaun", "d_maxgreyserman", "d_michaelkim", "d_angelcabrera", "tb:270"]}, {"id": "demo-e31", "entry_name": "Worm Burners", "member_name": "Midge P.", "picks": ["d_collinmorikawa", "d_russellhenley", "d_akshaybhatia", "d_sergiogarcia", "d_ryangerard", "d_masonhowella", "tb:281"]}, {"id": "demo-e32", "entry_name": "Cart Path Only", "member_name": "Ron T.", "picks": ["d_collinmorikawa", "d_tommyfleetwood", "d_robertmacintyre", "d_dustinjohnson", "d_aaronrai", "d_jacksonherringtona", "tb:281"]}, {"id": "demo-e33", "entry_name": "Sunday Pin Seekers", "member_name": "Gail V.", "picks": ["d_cameronsmith", "d_patrickcantlay", "d_sungjaeim", "d_nicolaihojgaard", "d_ryangerard", "d_mikeweir", "tb:280"]}, {"id": "demo-e34", "entry_name": "Breakfast Ball", "member_name": "Art F.", "picks": ["d_cameronsmith", "d_russellhenley", "d_patrickreed", "d_ryanfox", "d_harryhall", "d_josemariaolazabal", "tb:266"]}, {"id": "demo-e35", "entry_name": "The Foot Wedge", "member_name": "Lois D.", "picks": ["d_scottiescheffler", "d_patrickcantlay", "d_cameronyoung", "d_maverickmcnealy", "d_jacobbridgeman", "d_josemariaolazabal", "tb:269"]}, {"id": "demo-e36", "entry_name": "Draw vs. Fade", "member_name": "Sid K.", "picks": ["d_scottiescheffler", "d_minwoolee", "d_jjspaun", "d_sergiogarcia", "d_aaronrai", "d_masonhowella", "tb:267"]}, {"id": "demo-e37", "entry_name": "Bogey Train", "member_name": "Flo W.", "picks": ["d_xanderschauffele", "d_samburns", "d_andrewnovak", "d_sergiogarcia", "d_adamscott", "d_marcopenge", "tb:273"]}, {"id": "demo-e38", "entry_name": "Chunk & Run", "member_name": "Gus E.", "picks": ["d_jonrahm", "d_shanelowry", "d_harrisenglish", "d_dustinjohnson", "d_nicoechavarria", "d_rasmushojgaard", "tb:287"]}, {"id": "demo-e39", "entry_name": "Lip Out Lounge", "member_name": "Vera S.", "picks": ["d_xanderschauffele", "d_maxhoma", "d_bengriffin", "d_nicktaylor", "d_adamscott", "d_mattmccarty", "tb:271"]}, {"id": "demo-e40", "entry_name": "The Shankopotamus", "member_name": "Mel B.", "picks": ["d_xanderschauffele", "d_tommyfleetwood", "d_seppstraka", "d_sergiogarcia", "d_garywoodland", "d_vijaysingh", "tb:280"]}, {"id": "demo-e41", "entry_name": "Tap-In Titans", "member_name": "Ada R.", "picks": ["d_viktorhovland", "d_minwoolee", "d_seppstraka", "d_sergiogarcia", "d_nicoechavarria", "d_mattmccarty", "tb:280"]}, {"id": "demo-e42", "entry_name": "Amateur Hour", "member_name": "Chet O.", "picks": ["d_scottiescheffler", "d_tommyfleetwood", "d_seppstraka", "d_coreyconners", "d_jacobbridgeman", "d_charlschwartzel", "tb:266"]}, {"id": "demo-e43", "entry_name": "Plugged Lie Posse", "member_name": "Ida M.", "picks": ["d_collinmorikawa", "d_tommyfleetwood", "d_cameronyoung", "d_justinrose", "d_samstevens", "d_ethanfanga", "tb:276"]}, {"id": "demo-e44", "entry_name": "Gimme Three", "member_name": "Bud L.", "picks": ["d_collinmorikawa", "d_hidekimatsuyama", "d_sungjaeim", "d_nicolaihojgaard", "d_adamscott", "d_mattmccarty", "tb:273"]}, {"id": "demo-e45", "entry_name": "The Flop Shots", "member_name": "Peg C.", "picks": ["d_cameronsmith", "d_tommyfleetwood", "d_bengriffin", "d_dustinjohnson", "d_haotongli", "d_mikeweir", "tb:288"]}, {"id": "demo-e46", "entry_name": "Stinger Kings", "member_name": "Roy H.", "picks": ["d_collinmorikawa", "d_russellhenley", "d_harrisenglish", "d_ryanfox", "d_jacobbridgeman", "d_briancampbell", "tb:272"]}, {"id": "demo-e47", "entry_name": "Divot Diggers", "member_name": "Elsie T.", "picks": ["d_brysondechambeau", "d_brookskoepka", "d_andrewnovak", "d_chrisgotterup", "d_adamscott", "d_fredcouples", "tb:275"]}, {"id": "demo-e48", "entry_name": "Up & Down Club", "member_name": "Moe D.", "picks": ["d_cameronsmith", "d_hidekimatsuyama", "d_andrewnovak", "d_jakeknapp", "d_michaelkim", "d_masonhowella", "tb:272"]}, {"id": "demo-e49", "entry_name": "Snowman Builders", "member_name": "Fay N.", "picks": ["d_ludvigaberg", "d_hidekimatsuyama", "d_harrisenglish", "d_ryanfox", "d_bubbawatson", "d_angelcabrera", "tb:279"]}, {"id": "demo-e50", "entry_name": "The Grinders", "member_name": "Abe W.", "picks": ["d_cameronsmith", "d_tyrrellhatton", "d_wyndhamclark", "d_maverickmcnealy", "d_siwookim", "d_johnnykeefer", "tb:266"]}, {"id": "demo-e51", "entry_name": "Fescue Rescue", "member_name": "June B.", "picks": ["d_jonrahm", "d_maxhoma", "d_keeganbradley", "d_chrisgotterup", "d_zachjohnson", "d_ethanfanga", "tb:281"]}, {"id": "demo-e52", "entry_name": "Cabbage Pounders", "member_name": "Ned S.", "picks": ["d_rorymcilroy", "d_hidekimatsuyama", "d_mattfitzpatrick", "d_aldrichpotgieter", "d_samstevens", "d_michaelbrennan", "tb:269"]}, {"id": "demo-e53", "entry_name": "Short Grass Gang", "member_name": "Olive K.", "picks": ["d_jonrahm", "d_jordanspieth", "d_bengriffin", "d_maverickmcnealy", "d_kristofferreitan", "d_mikeweir", "tb:267"]}, {"id": "demo-e54", "entry_name": "Punch Out Crew", "member_name": "Saul R.", "picks": ["d_viktorhovland", "d_minwoolee", "d_keeganbradley", "d_jakeknapp", "d_aaronrai", "d_mikeweir", "tb:275"]}, {"id": "demo-e55", "entry_name": "The Waggle", "member_name": "Tess F.", "picks": ["d_brysondechambeau", "d_jordanspieth", "d_wyndhamclark", "d_sergiogarcia", "d_nicoechavarria", "d_vijaysingh", "tb:270"]}, {"id": "demo-e56", "entry_name": "Bunker Party", "member_name": "Hal J.", "picks": ["d_xanderschauffele", "d_patrickcantlay", "d_andrewnovak", "d_coreyconners", "d_zachjohnson", "d_michaelbrennan", "tb:269"]}, {"id": "demo-e57", "entry_name": "Ham & Egg It", "member_name": "Rae Q.", "picks": ["d_xanderschauffele", "d_tommyfleetwood", "d_akshaybhatia", "d_jakeknapp", "d_ryangerard", "d_dannywillett", "tb:274"]}, {"id": "demo-e58", "entry_name": "Center Cut", "member_name": "Ken Y.", "picks": ["d_xanderschauffele", "d_patrickcantlay", "d_cameronyoung", "d_dustinjohnson", "d_samstevens", "d_rasmushojgaard", "tb:283"]}, {"id": "demo-e59", "entry_name": "Toe Hook City", "member_name": "Bea Z.", "picks": ["d_collinmorikawa", "d_hidekimatsuyama", "d_mattfitzpatrick", "d_nicolaihojgaard", "d_siwookim", "d_rasmushojgaard", "tb:272"]}, {"id": "demo-e60", "entry_name": "The Provisional", "member_name": "Duke A.", "picks": ["d_brysondechambeau", "d_maxhoma", "d_andrewnovak", "d_maxgreyserman", "d_garywoodland", "d_michaelbrennan", "tb:280"]}, {"id": "demo-e61", "entry_name": "Double Cross", "member_name": "Nell G.", "picks": ["d_rorymcilroy", "d_hidekimatsuyama", "d_akshaybhatia", "d_nicolaihojgaard", "d_siwookim", "d_briancampbell", "tb:278"]}, {"id": "demo-e62", "entry_name": "Hosel Rockets", "member_name": "Ike V.", "picks": ["d_brysondechambeau", "d_tyrrellhatton", "d_bengriffin", "d_nicolaihojgaard", "d_harryhall", "d_fredcouples", "tb:284"]}, {"id": "demo-e63", "entry_name": "Velvet Touch", "member_name": "Cora J.", "picks": ["d_justinthomas", "d_brookskoepka", "d_bengriffin", "d_dustinjohnson", "d_aaronrai", "d_mattmccarty", "tb:276"]}, {"id": "demo-e64", "entry_name": "Two Club Wind", "member_name": "Lem P.", "picks": ["d_jonrahm", "d_shanelowry", "d_jjspaun", "d_ryanfox", "d_haotongli", "d_briancampbell", "tb:268"]}, {"id": "demo-e65", "entry_name": "The Carry Crew", "member_name": "Ruth E.", "picks": ["d_collinmorikawa", "d_minwoolee", "d_seppstraka", "d_sergiogarcia", "d_siwookim", "d_fredcouples", "tb:288"]}, {"id": "demo-e66", "entry_name": "Soft Hands", "member_name": "Gil T.", "picks": ["d_justinthomas", "d_shanelowry", "d_wyndhamclark", "d_coreyconners", "d_haotongli", "d_jacksonherringtona", "tb:278"]}, {"id": "demo-e67", "entry_name": "Hardpan Heroes", "member_name": "Myra L.", "picks": ["d_justinthomas", "d_maxhoma", "d_keeganbradley", "d_chrisgotterup", "d_adamscott", "d_josemariaolazabal", "tb:272"]}, {"id": "demo-e68", "entry_name": "First Off The Tee", "member_name": "Ott B.", "picks": ["d_brysondechambeau", "d_minwoolee", "d_keeganbradley", "d_jakeknapp", "d_kurtkitayama", "d_charlschwartzel", "tb:266"]}, {"id": "demo-e69", "entry_name": "Dew Sweepers", "member_name": "Enid W.", "picks": ["d_justinthomas", "d_hidekimatsuyama", "d_jjspaun", "d_coreyconners", "d_aaronrai", "d_michaelbrennan", "tb:284"]}, {"id": "demo-e70", "entry_name": "The Back Tees", "member_name": "Rex M.", "picks": ["d_scottiescheffler", "d_shanelowry", "d_keeganbradley", "d_sergiogarcia", "d_siwookim", "d_fredcouples", "tb:274"]}, {"id": "demo-e71", "entry_name": "Range Rats", "member_name": "Cleo D.", "picks": ["d_viktorhovland", "d_hidekimatsuyama", "d_sungjaeim", "d_coreyconners", "d_adamscott", "d_masonhowella", "tb:270"]}, {"id": "demo-e72", "entry_name": "Iron Byron", "member_name": "Sal H.", "picks": ["d_viktorhovland", "d_maxhoma", "d_mattfitzpatrick", "d_chrisgotterup", "d_samivalimaki", "d_jacksonherringtona", "tb:271"]}, {"id": "demo-e73", "entry_name": "Pure Contact", "member_name": "Wanda R.", "picks": ["d_collinmorikawa", "d_russellhenley", "d_sungjaeim", "d_justinrose", "d_michaelkim", "d_marcopenge", "tb:273"]}, {"id": "demo-e74", "entry_name": "The Clubhouse Turn", "member_name": "Big Jim F.", "picks": ["d_xanderschauffele", "d_tyrrellhatton", "d_jjspaun", "d_maxgreyserman", "d_samivalimaki", "d_josemariaolazabal", "tb:280"]}, {"id": "demo-e75", "entry_name": "Scramble Squad", "member_name": "Etta S.", "picks": ["d_collinmorikawa", "d_minwoolee", "d_jjspaun", "d_coreyconners", "d_samivalimaki", "d_masonhowella", "tb:280"]}, {"id": "demo-e76", "entry_name": "Mud Ball Mafia", "member_name": "Newt C.", "picks": ["d_scottiescheffler", "d_minwoolee", "d_andrewnovak", "d_nicolaihojgaard", "d_michaelkim", "d_briancampbell", "tb:279"]}, {"id": "demo-e77", "entry_name": "Silky Tempo", "member_name": "Prue V.", "picks": ["d_justinthomas", "d_minwoolee", "d_andrewnovak", "d_ryanfox", "d_adamscott", "d_charlschwartzel", "tb:277"]}, {"id": "demo-e78", "entry_name": "Ball Above Feet", "member_name": "Otis K.", "picks": ["d_scottiescheffler", "d_tyrrellhatton", "d_mattfitzpatrick", "d_alexnoren", "d_zachjohnson", "d_mattmccarty", "tb:267"]}, {"id": "demo-e79", "entry_name": "The Nineteenth Men", "member_name": "Zelda M.", "picks": ["d_viktorhovland", "d_jordanspieth", "d_cameronyoung", "d_coreyconners", "d_kristofferreitan", "d_fredcouples", "tb:280"]}, {"id": "demo-e80", "entry_name": "Green Reading Society", "member_name": "Cliff B.", "picks": ["d_viktorhovland", "d_minwoolee", "d_jjspaun", "d_ryanfox", "d_michaelkim", "d_mikeweir", "tb:273"]}];
 
 let TIERS = DEMO ? DEMO_TIERS : BASE_TIERS;
+/* referral program is built but parked — links still track (?ref= lands in
+   signups.referral) so old links keep working; the UI is hidden until launch */
+const REFERRAL_PROGRAM_LIVE = false;
 let PLAYER_INDEX = buildIndex(TIERS);
 
 /* Rules are generated as plain bullets from the pool format, then freely
@@ -1874,19 +1877,36 @@ function ClubMajorsPrototype() {
     return { name: dbPool.event_name, match: match || null };
   })();
   const teamMode = !!(poolEvent && poolEvent.match && poolEvent.match.teamEvent);
-  const ACTIVE_TIERS = teamMode ? TEAM_TIERS : TIERS;
+  /* FROZEN SHEET: a pool saves its tier snapshot at publish. The picksheet,
+     the board badges, and the server-side one-per-tier validation all read
+     that same snapshot, so tiers can never shuffle under members mid-week as
+     the odds move — and an entry can never hold two golfers from one tier. */
+  const poolTiers = !DEMO && !teamMode && dbPool && Array.isArray(dbPool.tiers) && dbPool.tiers.length >= 4 ? dbPool.tiers : null;
+  const ACTIVE_TIERS = teamMode ? TEAM_TIERS : (poolTiers || TIERS);
+  const POOL_TIER_INDEX = poolTiers ? buildIndex(poolTiers) : {};
+  /* token match on distinctive words; fail-open when ambiguous */
+  const eventTokensMatch = (a0, b0) => {
+    const stop = ["the", "championship", "classic", "open", "invitational", "tournament", "golf"];
+    const toks = (s) => String(s).toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((w) => w && stop.indexOf(w) === -1);
+    const a = toks(a0), b = toks(b0);
+    if (!a.length || !b.length) return true;
+    return a.some((w) => b.indexOf(w) !== -1) || b.some((w) => a.indexOf(w) !== -1);
+  };
   /* Does the odds-board field belong to THIS pool's event? On transition
      weekends the books price next week's event while this pool may be for a
      different one — offering the wrong field for picking is worse than
-     waiting. Token match on distinctive words; fail-open when ambiguous. */
+     waiting. A frozen snapshot IS the pool's own field, so it always matches. */
   const fieldMatchesPool = (() => {
-    if (DEMO || teamMode || !fieldEventName || !dbPool || !dbPool.event_name) return true;
-    const stop = ["the", "championship", "classic", "open", "invitational", "tournament", "golf"];
-    const toks = (s) => String(s).toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((w) => w && stop.indexOf(w) === -1);
-    const a = toks(fieldEventName), b = toks(dbPool.event_name);
-    if (!a.length || !b.length) return true;
-    return a.some((w) => b.indexOf(w) !== -1) || b.some((w) => a.indexOf(w) !== -1);
+    if (DEMO || teamMode || poolTiers || !fieldEventName || !dbPool || !dbPool.event_name) return true;
+    return eventTokensMatch(fieldEventName, dbPool.event_name);
   })();
+  /* snapshot of the LIVE odds tiers for a pool being created for evName —
+     null unless the books are pricing that exact event right now (never
+     freeze the wrong week's field onto a pool) */
+  const liveTierSnapshot = (evName, isTeamEvent) =>
+    !isTeamEvent && TIERS !== BASE_TIERS && Array.isArray(TIERS) && TIERS.length >= 4 && fieldEventName && eventTokensMatch(fieldEventName, evName)
+      ? TIERS.map((t) => ({ label: t.label, players: t.players.map((p) => ({ id: p.id, name: p.name, odds: p.odds || "" })) }))
+      : null;
   /* The EVENT constant is only correct for the one hardcoded tournament — a
      club with no published pool must never inherit its branding. */
   const isPlatformEvent = !!(poolEvent && poolEvent.match && poolEvent.match.start === EVENT.deadlineISO.slice(0, 10));
@@ -1912,6 +1932,17 @@ function ClubMajorsPrototype() {
     dbPool && dbPool.rules && dbPool.rules.indexOf("Ties split the affected places evenly") === -1
       ? dbPool.rules.split(/\n+|\\n|(?=\u2022)/).map((l) => l.replace(/^[\u2022\u00b7\-\s]+/, "").trim()).filter(Boolean)
       : null;
+
+  /* picks from an earlier field must keep resolving names/tiers on the board
+     even after the live odds roll to the next event — the pool's frozen
+     snapshot backfills the index (live data wins where both know a golfer) */
+  useEffect(() => {
+    if (poolTiers) {
+      PLAYER_INDEX = Object.assign({}, buildIndex(poolTiers), PLAYER_INDEX);
+      setFieldVersion((v) => v + 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbPool && dbPool.id]);
 
   /* prefill picks + names from an edit code (works cross-device) */
   async function beginEditByCode(token) {
@@ -2345,12 +2376,14 @@ function ClubMajorsPrototype() {
         .crest { width: 44px; height: 44px; color: var(--brass-bright); flex-shrink: 0; }
         .club-name { font-size: 23px; font-weight: 600; line-height: 1.15; }
         .club-sub { font-size: 12.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--brass-bright); margin-top: 4px; font-family: 'IBM Plex Mono', monospace; }
-        .tabs { display: flex; gap: 4px; margin-top: 18px; flex-wrap: wrap; }
+        .tabs { display: flex; gap: 2px; margin-top: 18px; flex-wrap: wrap; }
         .tab {
           appearance: none; border: none; cursor: pointer;
           background: transparent; color: rgba(247,242,228,0.85);
-          font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.06em;
-          text-transform: uppercase; padding: 10px 12px 12px; white-space: nowrap; flex-shrink: 0;
+          /* sized so all 7 admin tabs + both group labels fit ONE row in the
+             920px masthead (measured 890px at these values) — do not loosen */
+          font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em;
+          text-transform: uppercase; padding: 10px 8px 12px; white-space: nowrap; flex-shrink: 0;
           border-bottom: 3px solid transparent; margin-bottom: -3px;
         }
         .tab:hover { color: var(--cream); }
@@ -2358,11 +2391,12 @@ function ClubMajorsPrototype() {
         .tab:focus-visible { outline: 2px solid var(--brass-bright); outline-offset: -2px; }
         /* group labels match the tab titles' size; brass color + no underline
            keeps them reading as headings, not clickable tabs */
-        .tab-group-label { align-self: center; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brass-bright); opacity: 0.9; padding: 0 6px 2px 2px; white-space: nowrap; }
-        .tab-group-label.admin { padding-left: 16px; border-left: 1px solid rgba(255,255,255,0.25); margin-left: 10px; }
+        .tab-group-label { align-self: center; font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--brass-bright); opacity: 0.9; padding: 0 3px 2px 0; white-space: nowrap; }
+        .tab-group-label.admin { padding-left: 10px; border-left: 1px solid rgba(255,255,255,0.25); margin-left: 5px; }
         .manage-wrap { display: none; } /* phone-only — desktop shows admin tabs inline */
 
         .shell { max-width: 920px; margin: 0 auto; padding: 28px 24px 56px; display: flex; flex-direction: column; min-height: calc(100vh - 170px); }
+        .shell-wide { max-width: 1240px; } /* Account view breathes wider than the 920 content column */
         .shell > footer.powered { margin-top: auto; padding-top: 160px; }
 
         /* ---------- pool home ---------- */
@@ -2736,7 +2770,7 @@ function ClubMajorsPrototype() {
         </div>
       </header>
 
-      <main className="shell">
+      <main className={"shell" + (view === "signin" && session ? " shell-wide" : "")}>
         {/* ============ POOL HOME ============ */}
         {/* ============ PLATFORM FRONT DOOR (buyers: pros & GMs) ============ */}
         {view === "landing" && (
@@ -2800,18 +2834,15 @@ function ClubMajorsPrototype() {
               <div className="mono" style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 20 }}>
                 Flat software fee — entry fees never touch the platform
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap" }}>
-                {[["$30", "2026 Season Pass"], ["$75", "majors"], ["$30", "non-major events"], ["$330", "annual pass · 2027 onward"]].map(([p, l], i) => (
-                  <div key={l} className={"rate-item" + (i ? "" : " first")} style={{ borderLeft: i ? "1px dotted var(--paper-line)" : "none" }}>
-                    <div className="rate-price">{p}</div>
-                    <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginTop: 8 }}>{l}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 0 }}>
+                {[["$30", "2026 Season Pass", true], ["$75", "majors", false], ["$30", "non-major events", false], ["$330", "annual pass · 2027 onward", false]].map(([p, l, hot], i) => (
+                  <div key={l} className={"rate-item" + (i ? "" : " first")} style={{ borderLeft: i ? "1px dotted var(--paper-line)" : "none", background: hot ? "#F3EDD9" : "transparent", padding: "14px 18px 16px", borderRadius: hot ? 8 : 0 }}>
+                    {hot && <div className="mono" style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--pine)", fontWeight: 700, marginBottom: 6 }}>★ Best value</div>}
+                    <div className="rate-price" style={hot ? { color: "var(--pine)" } : undefined}>{p}</div>
+                    <div className="mono" style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: hot ? "var(--pine)" : "var(--muted)", marginTop: 8 }}>{l}</div>
                   </div>
                 ))}
               </div>
-              <p className="pro-note" style={{ marginTop: 22 }}>
-                Every pool comes with the odds-tiered picksheet, a live leaderboard, and a printable
-                picksheet for the grill room.
-              </p>
             </div>
           </div>
         )}
@@ -3171,7 +3202,9 @@ function ClubMajorsPrototype() {
                   {isOpen && (
                     <div className="row-detail">
                       {e.picks.map((pid) => {
-                        const p = PLAYER_INDEX[pid] || TEAM_INDEX[pid] || { name: "(no longer in field)", tier: "—" };
+                        /* tier badge comes from the pool's frozen snapshot first —
+                           live re-tiering must never relabel a submitted entry */
+                        const p = POOL_TIER_INDEX[pid] || PLAYER_INDEX[pid] || TEAM_INDEX[pid] || { name: "(no longer in field)", tier: "—" };
                         const s = scores[pid] || { total: 0, thru: 0 };
                         const val = poolScore(pid, scores);
                         const counted = e.counted.has(pid);
@@ -3596,6 +3629,7 @@ function ClubMajorsPrototype() {
                                 tier_method: setup.tierMethod,
                                 max_entries: setup.maxEntries === "unlimited" ? null : Number(setup.maxEntries),
                                 member_edits: !!setup.memberEdits,
+                                tiers: liveTierSnapshot(evName, !!(selectedEvent && selectedEvent.teamEvent)),
                               })
                               .select()
                               .single();
@@ -3665,7 +3699,7 @@ function ClubMajorsPrototype() {
                               try {
                                 const { data: np, error } = await sb
                                   .from("pools")
-                                  .insert({ club_id: dbPool.club_id, published: false, tiebreaker_on: !!setup.tiebreakerOn, ...poolFields })
+                                  .insert({ club_id: dbPool.club_id, published: false, tiebreaker_on: !!setup.tiebreakerOn, tiers: liveTierSnapshot(evName, !!(selectedEvent && selectedEvent.teamEvent)), ...poolFields })
                                   .select()
                                   .single();
                                 if (error) throw error;
@@ -4245,7 +4279,9 @@ function ClubMajorsPrototype() {
                     </div>
                     {pwMsg && <p className="set-sub" style={{ marginTop: 8 }}>{pwMsg}</p>}
                   </div>
-                  {(role === "pro" || role === "owner") && dbClub && (
+                  {/* referral program parked until Jerry launches the bonus —
+                      flip REFERRAL_PROGRAM_LIVE to bring this section back */}
+                  {REFERRAL_PROGRAM_LIVE && (role === "pro" || role === "owner") && dbClub && (
                     <div style={{ borderTop: "1px dotted var(--paper-line)", marginTop: 14, paddingTop: 14 }}>
                       <h3 className="set-title" style={{ fontSize: 14 }}>Refer another club</h3>
                       <p className="set-sub">Know a pro at another club? Share your referral link — when their club signs up through it, your club is credited as the referrer.</p>
